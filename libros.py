@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 import urllib.parse
 
-# 👉 Función para buscar libros en Open Library
+# --- Función para buscar libros básicos ---
 def buscar_libros_openlibrary(query, tipo="title"):
     query_escapado = urllib.parse.quote(query)
     url = f"https://openlibrary.org/search.json?{tipo}={query_escapado}&limit=15"
@@ -22,15 +22,33 @@ def buscar_libros_openlibrary(query, tipo="title"):
             "Autor/es": ", ".join(doc.get("author_name", ["Desconocido"])),
             "Año publicación": doc.get("first_publish_year", "¿?"),
             "ISBN": ", ".join(doc.get("isbn", [])[:2]) if "isbn" in doc else "No informado",
-            "Temas / Palabras clave": ", ".join(doc.get("subject", [])[:5]) if "subject" in doc else "No informados"
+            "Temas / Palabras clave": ", ".join(doc.get("subject", [])[:5]) if "subject" in doc else "No informados",
+            "Work Key": doc.get("key", "")  # necesario para consultar más detalles
         })
 
     return libros
 
-# ---------- Interfaz Streamlit ----------
-st.title("📚 Buscador de Libros (Open Library API)")
+# --- Función para obtener detalles de un libro ---
+def obtener_detalles_libro(work_key):
+    work_id = work_key.replace("/works/", "")
+    url = f"https://openlibrary.org/works/{work_id}.json"
+    res = requests.get(url)
+    if res.status_code != 200:
+        return {}
 
-# 🔍 Búsqueda por título
+    data = res.json()
+    detalles = {
+        "Título": data.get("title", "Sin título"),
+        "Descripción": data.get("description", {}).get("value") if isinstance(data.get("description"), dict)
+                       else data.get("description", "Sin descripción"),
+        "Temas": ", ".join(data.get("subjects", [])[:10]) if "subjects" in data else "No especificados"
+    }
+    return detalles
+
+# --- Interfaz Streamlit ---
+st.title("📚 Buscador de Libros con Detalles (Open Library API)")
+
+# Busqueda por título
 st.subheader("🔍 Buscar por Título")
 titulo = st.text_input("Título (o parte):", key="titulo")
 if st.button("Buscar título"):
@@ -38,18 +56,19 @@ if st.button("Buscar título"):
         resultados = buscar_libros_openlibrary(titulo, tipo="title")
         if resultados:
             df = pd.DataFrame(resultados)
-            st.dataframe(df)
+            df_simple = df.drop(columns=["Work Key"])
+            st.dataframe(df_simple)
+
+            seleccion = st.selectbox("Seleccioná un libro para ver más detalles:", df["Título"])
+            fila = df[df["Título"] == seleccion].iloc[0]
+            detalles = obtener_detalles_libro(fila["Work Key"])
+
+            st.markdown(f"### 📖 {detalles.get('Título')}")
+            st.markdown(f"**Autor/es:** {fila['Autor/es']}")
+            st.markdown(f"**Año publicación:** {fila['Año publicación']}")
+            st.markdown(f"**ISBN:** {fila['ISBN']}")
+            st.markdown(f"**Temas:** {detalles.get('Temas')}")
+            st.markdown(f"**Descripción:**\n\n{detalles.get('Descripción')}")
         else:
             st.warning("No se encontraron resultados.")
 
-# 🔍 Búsqueda por autor
-st.subheader("🔍 Buscar por Autor")
-autor = st.text_input("Autor (o parte):", key="autor")
-if st.button("Buscar autor"):
-    if autor.strip():
-        resultados = buscar_libros_openlibrary(autor, tipo="author")
-        if resultados:
-            df = pd.DataFrame(resultados)
-            st.dataframe(df)
-        else:
-            st.warning("No se encontraron resultados.")
