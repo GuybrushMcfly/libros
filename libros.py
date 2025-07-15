@@ -58,30 +58,40 @@ if st.button("Buscar título"):
         if resultados:
             df = pd.DataFrame(resultados)
             df = df.sort_values(by="Título")  # Ordenar alfabéticamente
+            df.fillna("No disponible", inplace=True)  # Evita errores por NaN
 
+            # --- Configurar tabla tipo Excel ---
             gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(enabled=True)
+            gb.configure_default_column(groupable=True, editable=False)
             gb.configure_selection("single", use_checkbox=False)
             grid_options = gb.build()
 
+            # --- Mostrar tabla con AgGrid ---
             grid_response = AgGrid(
                 df,
                 gridOptions=grid_options,
                 update_mode=GridUpdateMode.SELECTION_CHANGED,
                 height=400,
-                theme="alpine"
+                theme="alpine",
+                allow_unsafe_jscode=True,
+                enable_enterprise_modules=False,
             )
 
+            # --- Mostrar detalles si se seleccionó una fila ---
             selected = grid_response["selected_rows"]
             if selected:
                 fila = selected[0]
-                detalles = obtener_detalles_libro(fila["Work Key"])
+                work_key = fila.get("Work Key", "")
+                if work_key:
+                    detalles = obtener_detalles_libro(work_key)
 
-                st.markdown("### 📖 Detalles del libro seleccionado")
-                st.markdown(f"**Título:** {fila['Título']}")
-                st.markdown(f"**Autor/es:** {fila['Autor/es']}")
-                st.markdown(f"**Año publicación:** {fila['Año publicación']}")
-                st.markdown(f"**ISBN:** {fila['ISBN']}")
-                st.markdown(f"**Temas:** {detalles.get('Temas')}")
-                st.markdown(f"**Descripción:**\n\n{detalles.get('Descripción')}")
+                    st.markdown("### 📖 Detalles del libro seleccionado")
+                    st.markdown(f"**Título:** {fila['Título']}")
+                    st.markdown(f"**Autor/es:** {fila['Autor/es']}")
+                    st.markdown(f"**Año publicación:** {fila['Año publicación']}")
+                    st.markdown(f"**ISBN:** {fila['ISBN']}")
+                    st.markdown(f"**Temas:** {detalles.get('Temas')}")
+                    st.markdown(f"**Descripción:**\n\n{detalles.get('Descripción')}")
         else:
             st.warning("No se encontraron resultados.")
