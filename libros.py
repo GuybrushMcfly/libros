@@ -1,39 +1,32 @@
 import streamlit as st
 import requests
 import pandas as pd
+import urllib.parse
 
-
-API_KEY = st.secrets["GOOGLE_BOOKS_API_KEY"]
-
-# 👉 Función para buscar en Google Books API
-def buscar_libros_google(query, tipo="intitle"):
-    url = f"https://www.googleapis.com/books/v1/volumes?q={tipo}:{query}&maxResults=10&key={API_KEY}"
+# 👉 Función para buscar en Open Library por título o autor
+def buscar_libros_openlibrary(query, tipo="title"):
+    query_escapado = urllib.parse.quote(query)
+    url = f"https://openlibrary.org/search.json?{tipo}={query_escapado}&limit=10"
     res = requests.get(url)
 
     if res.status_code != 200:
-        st.error(f"Error al consultar la API: código {res.status_code}")
-        try:
-            st.error(res.json())
-        except:
-            st.error(res.text)
+        st.error(f"Error al consultar Open Library: código {res.status_code}")
         return []
-
 
     data = res.json()
     libros = []
 
-    for item in data.get("items", []):
-        info = item.get("volumeInfo", {})
+    for doc in data.get("docs", []):
         libros.append({
-            "Título": info.get("title", "Sin título"),
-            "Autor/es": ", ".join(info.get("authors", ["Desconocido"])),
-            "Editorial": info.get("publisher", "No informada")
+            "Título": doc.get("title", "Sin título"),
+            "Autor/es": ", ".join(doc.get("author_name", ["Desconocido"])),
+            "Editorial": ", ".join(doc.get("publisher", ["No informada"]))[:60]  # Truncamos si es muy largo
         })
 
     return libros
 
 # ---------- Interfaz Streamlit ----------
-st.title("📚 Buscador de Libros (Google Books API)")
+st.title("📚 Buscador de Libros (Open Library API)")
 
 col1, col2 = st.columns(2)
 
@@ -42,7 +35,7 @@ with col1:
     titulo = st.text_input("Título (o parte):")
     if st.button("Buscar título"):
         if titulo.strip():
-            resultados = buscar_libros_google(titulo, tipo="intitle")
+            resultados = buscar_libros_openlibrary(titulo, tipo="title")
             if resultados:
                 df = pd.DataFrame(resultados)
                 st.dataframe(df)
@@ -54,7 +47,7 @@ with col2:
     autor = st.text_input("Autor (o parte):")
     if st.button("Buscar autor"):
         if autor.strip():
-            resultados = buscar_libros_google(autor, tipo="inauthor")
+            resultados = buscar_libros_openlibrary(autor, tipo="author")
             if resultados:
                 df = pd.DataFrame(resultados)
                 st.dataframe(df)
