@@ -11,8 +11,13 @@ def buscar_libros_google(query, tipo="intitle"):
     res = requests.get(url)
 
     if res.status_code != 200:
-        st.error("Error al consultar la API")
+        st.error(f"Error al consultar la API: código {res.status_code}")
+        try:
+            st.error(res.json())
+        except:
+            st.error(res.text)
         return []
+
 
     data = res.json()
     libros = []
