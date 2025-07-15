@@ -57,14 +57,14 @@ if st.button("Buscar título"):
         resultados = buscar_libros_openlibrary(titulo, tipo="title")
         if resultados:
             df = pd.DataFrame(resultados)
-            df_mostrar = df[["Título", "Autor/es", "Año publicación"]]
+            df = df.sort_values(by="Título")  # Ordenar alfabéticamente
 
-            gb = GridOptionsBuilder.from_dataframe(df_mostrar)
+            gb = GridOptionsBuilder.from_dataframe(df)
             gb.configure_selection("single", use_checkbox=False)
             grid_options = gb.build()
 
             grid_response = AgGrid(
-                df_mostrar,
+                df,
                 gridOptions=grid_options,
                 update_mode=GridUpdateMode.SELECTION_CHANGED,
                 height=400,
@@ -73,8 +73,7 @@ if st.button("Buscar título"):
 
             selected = grid_response["selected_rows"]
             if selected:
-                titulo_sel = selected[0]["Título"]
-                fila = df[df["Título"] == titulo_sel].iloc[0]
+                fila = selected[0]
                 detalles = obtener_detalles_libro(fila["Work Key"])
 
                 st.markdown("### 📖 Detalles del libro seleccionado")
