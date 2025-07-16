@@ -15,25 +15,109 @@ st.set_page_config(
 st.title("📚 Buscador de Obras - Biblioteca Virtual Miguel de Cervantes")
 st.markdown("Búsqueda de obras utilizando consultas SPARQL sobre los datos enlazados de la BVMC")
 
-# URL del endpoint SPARQL
-SPARQL_ENDPOINT = "http://data.cervantesvirtual.com/bvmc-lod/repositories/data"
+# URL del endpoint SPARQL - Probando con diferentes endpoints
+SPARQL_ENDPOINTS = [
+    "http://data.cervantesvirtual.com/bvmc-lod/repositories/data",
+    "http://data.cervantesvirtual.com/sparql",
+    "http://data.cervantesvirtual.com/bvmc-lod/sparql"
+]
+
+# Función para probar conectividad
+def test_endpoint_connectivity():
+    """Prueba la conectividad con diferentes endpoints"""
+    st.sidebar.header("🔧 Estado del Endpoint")
+    
+    for i, endpoint in enumerate(SPARQL_ENDPOINTS):
+        try:
+            response = requests.get(endpoint, timeout=5)
+            if response.status_code == 200:
+                st.sidebar.success(f"✅ Endpoint {i+1}: OK")
+                return endpoint
+            else:
+                st.sidebar.warning(f"⚠️ Endpoint {i+1}: {response.status_code}")
+        except:
+            st.sidebar.error(f"❌ Endpoint {i+1}: No disponible")
+    
+    return SPARQL_ENDPOINTS[0]  # Usar el primero por defecto
+
+# Seleccionar endpoint activo
+SPARQL_ENDPOINT = test_endpoint_connectivity()
 
 def execute_sparql_query(query):
     """Ejecuta una consulta SPARQL y devuelve los resultados"""
     try:
-        headers = {
-            'Accept': 'application/sparql-results+json',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        # Intentar diferentes formatos de respuesta y métodos
+        formats_to_try = [
+            ('application/sparql-results+json', 'json'),
+            ('application/json', 'json'),
+            ('text/csv', 'csv'),
+            ('application/sparql-results+xml', 'xml'),
+            ('text/plain', 'text')
+        ]
         
-        data = {'query': query}
-        response = requests.post(SPARQL_ENDPOINT, headers=headers, data=data, timeout=30)
+        for accept_header, format_type in formats_to_try:
+            try:
+                # Probar con GET primero
+                params = {'query': query}
+                headers = {
+                    'Accept': accept_header,
+                    'User-Agent': 'StreamlitBVMC/1.0'
+                }
+                
+                response = requests.get(SPARQL_ENDPOINT, params=params, headers=headers, timeout=30)
+                
+                if response.status_code == 200:
+                    if format_type == 'json':
+                        return response.json()
+                    elif format_type == 'csv':
+                        # Convertir CSV a formato JSON-like
+                        import io
+                        import csv
+                        lines = response.text.strip().split('\n')
+                        if len(lines) > 1:
+                            reader = csv.DictReader(io.StringIO(response.text))
+                            results = []
+                            for row in reader:
+                                binding = {}
+                                for key, value in row.items():
+                                    binding[key] = {'value': value}
+                                results.append(binding)
+                            return {'results': {'bindings': results}}
+                    elif format_type == 'text':
+                        # Mostrar respuesta de texto plano
+                        st.text(response.text[:1000])  # Mostrar primeros 1000 caracteres
+                        return None
+                
+                # Si GET falla, probar con POST
+                headers['Content-Type'] = 'application/x-www-form-urlencoded'
+                data = {'query': query}
+                response = requests.post(SPARQL_ENDPOINT, headers=headers, data=data, timeout=30)
+                
+                if response.status_code == 200:
+                    if format_type == 'json':
+                        return response.json()
+                    elif format_type == 'csv':
+                        import io
+                        import csv
+                        lines = response.text.strip().split('\n')
+                        if len(lines) > 1:
+                            reader = csv.DictReader(io.StringIO(response.text))
+                            results = []
+                            for row in reader:
+                                binding = {}
+                                for key, value in row.items():
+                                    binding[key] = {'value': value}
+                                results.append(binding)
+                            return {'results': {'bindings': results}}
+                
+            except Exception as e:
+                continue
         
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.error(f"Error en la consulta: {response.status_code}")
-            return None
+        # Si ningún formato funciona, mostrar información de debug
+        st.error(f"Error en la consulta: {response.status_code}")
+        st.error(f"Respuesta del servidor: {response.text[:500]}")
+        return None
+        
     except requests.exceptions.RequestException as e:
         st.error(f"Error de conexión: {str(e)}")
         return None
@@ -164,12 +248,22 @@ if search_type == "Consulta personalizada":
     if st.button("Ejecutar consulta"):
         if custom_query.strip():
             with st.spinner("Ejecutando consulta..."):
+                st.code(custom_query, language='sparql')  # Mostrar la consulta
                 results = execute_sparql_query(custom_query)
                 if results:
                     df = format_results(results)
                     if not df.empty:
                         st.success(f"Se encontraron {len(df)} resultados")
                         st.dataframe(df, use_container_width=True)
+                        
+                        # Opción para descargar
+                        csv = df.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Descargar resultados (CSV)",
+                            data=csv,
+                            file_name="bvmc_consulta_personalizada.csv",
+                            mime="text/csv"
+                        )
                     else:
                         st.warning("No se encontraron resultados")
         else:
@@ -193,40 +287,51 @@ else:
         st.info(descriptions[search_type])
     
     # Botón para ejecutar la búsqueda
-    if st.button("🔍 Buscar", key=f"search_{search_type}"):
-        query = queries.get(search_type)
-        if query:
-            with st.spinner("Buscando..."):
-                results = execute_sparql_query(query)
-                if results:
-                    df = format_results(results)
-                    if not df.empty:
-                        st.success(f"Se encontraron {len(df)} resultados")
-                        
-                        # Mostrar resultados con formato mejorado
-                        st.dataframe(df, use_container_width=True)
-                        
-                        # Opción para descargar resultados
-                        csv = df.to_csv(index=False)
-                        st.download_button(
-                            label="📥 Descargar resultados (CSV)",
-                            data=csv,
-                            file_name=f"bvmc_{search_type.lower().replace(' ', '_')}.csv",
-                            mime="text/csv"
-                        )
-                        
-                        # Mostrar estadísticas básicas
-                        st.subheader("📊 Estadísticas")
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric("Total de resultados", len(df))
-                        with col2:
-                            st.metric("Columnas", len(df.columns))
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        if st.button("🔍 Buscar", key=f"search_{search_type}"):
+            query = queries.get(search_type)
+            if query:
+                with st.spinner("Buscando..."):
+                    st.code(query, language='sparql')  # Mostrar la consulta que se ejecuta
+                    results = execute_sparql_query(query)
+                    if results:
+                        df = format_results(results)
+                        if not df.empty:
+                            st.success(f"Se encontraron {len(df)} resultados")
                             
+                            # Mostrar resultados con formato mejorado
+                            st.dataframe(df, use_container_width=True)
+                            
+                            # Opción para descargar resultados
+                            csv = df.to_csv(index=False)
+                            st.download_button(
+                                label="📥 Descargar resultados (CSV)",
+                                data=csv,
+                                file_name=f"bvmc_{search_type.lower().replace(' ', '_')}.csv",
+                                mime="text/csv"
+                            )
+                            
+                            # Mostrar estadísticas básicas
+                            st.subheader("📊 Estadísticas")
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.metric("Total de resultados", len(df))
+                            with col2:
+                                st.metric("Columnas", len(df.columns))
+                                
+                        else:
+                            st.warning("No se encontraron resultados para esta búsqueda")
                     else:
-                        st.warning("No se encontraron resultados para esta búsqueda")
-                else:
-                    st.error("Error al ejecutar la consulta")
+                        st.error("Error al ejecutar la consulta")
+    
+    with col2:
+        # Botón para mostrar la consulta SPARQL
+        if st.button("📋 Ver consulta", key=f"show_query_{search_type}"):
+            query = queries.get(search_type)
+            if query:
+                st.code(query, language='sparql')
 
 # Información adicional en el sidebar
 st.sidebar.markdown("---")
