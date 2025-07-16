@@ -3,6 +3,8 @@ from supabase import create_client
 from unidecode import unidecode
 import re
 import pandas as pd 
+import difflib
+import os
 
 @st.cache_resource
 def init_connection():
@@ -74,19 +76,12 @@ def registrar_autor():
         texto = input_texto.strip()
         if "," in texto:
             partes = [p.strip() for p in texto.split(",")]
-            if len(partes) == 2:
-                apellido, nombre = partes
-            else:
-                apellido, nombre = texto.upper(), ""
+            apellido = partes[0] if len(partes) >= 1 else ""
+            nombre = partes[1] if len(partes) == 2 else ""
         else:
-            # Si no hay coma, intentar separar por último espacio
             tokens = texto.split()
-            if len(tokens) >= 2:
-                apellido = " ".join(tokens[:-1])
-                nombre = tokens[-1]
-            else:
-                apellido = texto
-                nombre = ""
+            apellido = " ".join(tokens[:-1]) if len(tokens) >= 2 else texto
+            nombre = tokens[-1] if len(tokens) >= 2 else ""
 
         nombre_formal = f"{apellido.upper()}, {nombre.upper()}".strip()
         nombre_visual = f"{nombre.capitalize()} {apellido.capitalize()}".strip()
@@ -103,12 +98,15 @@ def registrar_autor():
     if st.button("Ingresar autor") and nombre_input:
         datos = procesar_autor(nombre_input)
 
-        # --- Buscar coincidencias por nombre_normalizado ---
-        coincidencias = supabase.table("autores") \
-            .select("*") \
-            .ilike("nombre_normalizado", f"%{datos['nombre_normalizado']}%") \
-            .execute().data
+        # Traer autores ya registrados
+        autores_db = supabase.table("autores").select("nombre_formal, nombre_visual, nombre_normalizado").execute().data
 
+        # Comparar con nombre_normalizado
+        existentes = [a["nombre_normalizado"] for a in autores_db if "nombre_normalizado" in a]
+        similares = difflib.get_close_matches(datos["nombre_normalizado"], existentes, n=5, cutoff=0.75)
+
+        # Mostrar coincidencias si hay
+        coincidencias = [a for a in autores_db if a["nombre_normalizado"] in similares]
         if coincidencias:
             st.warning("⚠️ Se encontraron autores similares:")
             df = pd.DataFrame(coincidencias)[["nombre_formal", "nombre_visual"]]
@@ -117,7 +115,7 @@ def registrar_autor():
             if not st.button("Confirmar igualmente"):
                 st.stop()
 
-        # --- Insertar si no hay coincidencias o se confirma ---
+        # Insertar autor si no hay coincidencias o se confirma
         supabase.table("autores").insert(datos).execute()
         st.success("✅ Autor registrado correctamente.")
 
