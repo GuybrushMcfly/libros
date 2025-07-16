@@ -46,6 +46,9 @@ SPARQL_ENDPOINT = test_endpoint_connectivity()
 def execute_sparql_query(query):
     """Ejecuta una consulta SPARQL y devuelve los resultados"""
     try:
+        # URL del endpoint SPARQL oficial
+        endpoint = "https://data.cervantesvirtual.com/sparql"
+        
         # Intentar diferentes formatos de respuesta y métodos
         formats_to_try = [
             ('application/sparql-results+json', 'json'),
@@ -61,12 +64,14 @@ def execute_sparql_query(query):
                 params = {'query': query}
                 headers = {
                     'Accept': accept_header,
-                    'User-Agent': 'StreamlitBVMC/1.0'
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 }
                 
-                response = requests.get(SPARQL_ENDPOINT, params=params, headers=headers, timeout=30)
+                st.info(f"Probando con {accept_header} mediante GET...")
+                response = requests.get(endpoint, params=params, headers=headers, timeout=30)
                 
                 if response.status_code == 200:
+                    st.success(f"¡Conexión exitosa con {accept_header}!")
                     if format_type == 'json':
                         return response.json()
                     elif format_type == 'csv':
@@ -87,13 +92,17 @@ def execute_sparql_query(query):
                         # Mostrar respuesta de texto plano
                         st.text(response.text[:1000])  # Mostrar primeros 1000 caracteres
                         return None
+                else:
+                    st.warning(f"GET falló con {response.status_code}: {response.text[:200]}")
                 
                 # Si GET falla, probar con POST
+                st.info(f"Probando con {accept_header} mediante POST...")
                 headers['Content-Type'] = 'application/x-www-form-urlencoded'
                 data = {'query': query}
-                response = requests.post(SPARQL_ENDPOINT, headers=headers, data=data, timeout=30)
+                response = requests.post(endpoint, headers=headers, data=data, timeout=30)
                 
                 if response.status_code == 200:
+                    st.success(f"¡Conexión exitosa con POST!")
                     if format_type == 'json':
                         return response.json()
                     elif format_type == 'csv':
@@ -109,13 +118,15 @@ def execute_sparql_query(query):
                                     binding[key] = {'value': value}
                                 results.append(binding)
                             return {'results': {'bindings': results}}
+                else:
+                    st.warning(f"POST falló con {response.status_code}: {response.text[:200]}")
                 
             except Exception as e:
+                st.error(f"Error con {accept_header}: {str(e)}")
                 continue
         
         # Si ningún formato funciona, mostrar información de debug
-        st.error(f"Error en la consulta: {response.status_code}")
-        st.error(f"Respuesta del servidor: {response.text[:500]}")
+        st.error("No se pudo conectar con ningún formato de respuesta")
         return None
         
     except requests.exceptions.RequestException as e:
@@ -146,6 +157,9 @@ st.sidebar.header("🔍 Tipo de Búsqueda")
 search_type = st.sidebar.selectbox(
     "Selecciona el tipo de búsqueda:",
     [
+        "Consulta simple de prueba",
+        "Todas las personas",
+        "Todas las manifestaciones",
         "Obras de Miguel de Cervantes",
         "Idiomas disponibles",
         "Fechas de publicación",
@@ -167,7 +181,36 @@ queries = {
             ?m a rdac:Manifestation .
             ?m rdfs:label ?label
         }
-        LIMIT 20
+        LIMIT 10
+    """,
+    
+    "Consulta simple de prueba": """
+        PREFIX rdac: <http://rdaregistry.info/Elements/c/>
+        SELECT ?s ?p ?o
+        WHERE {
+            ?s ?p ?o .
+        }
+        LIMIT 5
+    """,
+    
+    "Todas las personas": """
+        PREFIX rdac: <http://rdaregistry.info/Elements/c/>
+        SELECT ?person
+        WHERE {
+            ?person a rdac:Person .
+        }
+        LIMIT 10
+    """,
+    
+    "Todas las manifestaciones": """
+        PREFIX rdac: <http://rdaregistry.info/Elements/c/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT ?manifestation ?label
+        WHERE {
+            ?manifestation a rdac:Manifestation .
+            OPTIONAL { ?manifestation rdfs:label ?label }
+        }
+        LIMIT 10
     """,
     
     "Idiomas disponibles": """
@@ -275,6 +318,9 @@ else:
     
     # Mostrar descripción según el tipo de búsqueda
     descriptions = {
+        "Consulta simple de prueba": "Consulta básica para verificar la conectividad con el endpoint SPARQL.",
+        "Todas las personas": "Lista todas las personas disponibles en el repositorio.",
+        "Todas las manifestaciones": "Lista todas las manifestaciones disponibles en el repositorio.",
         "Obras de Miguel de Cervantes": "Lista las obras del autor Miguel de Cervantes Saavedra disponibles en el catálogo.",
         "Idiomas disponibles": "Muestra los idiomas ordenados por el número de manifestaciones asociadas.",
         "Fechas de publicación": "Lista las fechas de publicación del repositorio ordenadas por número de manifestaciones.",
