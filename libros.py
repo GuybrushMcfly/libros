@@ -5,7 +5,7 @@ from supabase import create_client, Client
 # Probar conexión a Supabase
 try:
     url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_KEY"]
+    key = st.secrets["SUPABASE_SERVICE_KEY"]
     supabase: Client = create_client(url, key)
 
     # Intentar una consulta mínima
