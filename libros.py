@@ -72,17 +72,9 @@ def registrar_autor():
 
     nombre_input = st.text_input("Apellido, Nombre del autor").strip()
 
-    def capitalizar_nombre(texto: str) -> str:
-        partes = texto.split()
-        partes_cap = []
-        for parte in partes:
-            if "." in parte:
-                partes_cap.append(parte.upper())  # Ej: J.K.
-            else:
-                partes_cap.append(parte.capitalize())  # Ej: Rowling, Van, De
-        return " ".join(partes_cap)
+    def capitalizar_nombre(nombre):
+        return " ".join([s.capitalize() if not s.isupper() else s for s in re.split(r"[\s\-\.]", nombre)])
     
-
     def procesar_autor(input_texto):
         texto = input_texto.strip()
         if "," in texto:
@@ -93,46 +85,53 @@ def registrar_autor():
             tokens = texto.split()
             apellido = " ".join(tokens[:-1]) if len(tokens) >= 2 else texto
             nombre = tokens[-1] if len(tokens) >= 2 else ""
-
+    
         nombre_formal = f"{apellido.upper()}, {nombre.upper()}".strip()
         nombre_visual = f"{capitalizar_nombre(nombre)} {capitalizar_nombre(apellido)}".strip()
-
         sin_tildes = unidecode(nombre_formal)
         nombre_normalizado = unidecode(f"{apellido} {nombre}").lower().strip()
-
+    
         return {
             "nombre_formal": nombre_formal,
             "nombre_visual": nombre_visual,
             "sin_tildes": sin_tildes,
             "nombre_normalizado": nombre_normalizado
         }
-
+    
+    # --- Formulario en Streamlit ---
+    nombre_input = st.text_input("Apellido, Nombre del autor").strip()
+    
     if st.button("Ingresar autor") and nombre_input:
         datos = procesar_autor(nombre_input)
-
-        
-
-        # Traer autores ya registrados
-        autores_db = supabase.table("autores").select("nombre_formal, nombre_visual, nombre_normalizado").execute().data
-
-        # Comparar con nombre_normalizado
-        existentes = [a["nombre_normalizado"] for a in autores_db if "nombre_normalizado" in a]
-        similares = difflib.get_close_matches(datos["nombre_normalizado"], existentes, n=5, cutoff=0.75)
-
-        # Variante invertida para comparar ambas combinaciones
+        apellido = datos["nombre_formal"].split(",")[0]
+        nombre = datos["nombre_formal"].split(",")[1] if "," in datos["nombre_formal"] else ""
+    
+        # Variante invertida
         nombre_normalizado_invertido = unidecode(f"{nombre} {apellido}").lower().strip()
-        
-        # Buscar autores donde el nombre_normalizado contenga ambas palabras
-        # (ya sea en el orden original o invertido)
+    
+        # Buscar coincidencias directas desde Supabase
+        autores_db = supabase.table("autores").select("nombre_formal, nombre_visual, nombre_normalizado").execute().data
+        existentes = [a["nombre_normalizado"] for a in autores_db if "nombre_normalizado" in a]
+    
+        # Similares por difflib
+        similares = difflib.get_close_matches(datos["nombre_normalizado"], existentes, n=5, cutoff=0.75)
+    
+        # Coincidencias en Supabase por LIKE
         coincidencias = supabase.table("autores") \
             .select("*") \
             .or_(
                 f"nombre_normalizado.ilike.%{datos['nombre_normalizado']}%,"
                 f"nombre_normalizado.ilike.%{nombre_normalizado_invertido}%"
             ).execute().data
-
-
-        # Insertar autor si no hay coincidencias o se confirma
+    
+        if similares or coincidencias:
+            st.warning("⚠️ Se encontraron autores similares ya registrados:")
+            for autor in coincidencias:
+                st.markdown(f"- **{autor['nombre_formal']}** – {autor['nombre_visual']}")
+            if not st.button("Confirmar igualmente"):
+                st.stop()
+    
+        # Insertar autor
         supabase.table("autores").insert(datos).execute()
         st.success("✅ Autor registrado correctamente.")
 
