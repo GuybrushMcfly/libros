@@ -3,17 +3,18 @@ import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
-ENDPOINT = "http://data.cervantesvirtual.com/bvmc-lod/repositories/data"
+# Endpoint SPARQL correcto
+ENDPOINT = "http://data.cervantesvirtual.com/openrdf-sesame/repositories/data"
 
 @st.cache_data
-def busca_autores(parte_nombre):
+def busca_autores(parte):
     sparql = SPARQLWrapper(ENDPOINT)
     sparql.setQuery(f"""
         PREFIX foaf: <http://xmlns.com/foaf/0.1/>
         SELECT DISTINCT ?autor ?name WHERE {{
           ?autor a foaf:Person ;
                  foaf:name ?name .
-          FILTER(CONTAINS(LCASE(?name), LCASE("{parte_nombre}")))
+          FILTER(CONTAINS(LCASE(?name), LCASE("{parte}")))
         }} LIMIT 10
     """)
     sparql.setReturnFormat(JSON)
@@ -21,7 +22,7 @@ def busca_autores(parte_nombre):
     return [(b["autor"]["value"], b["name"]["value"]) for b in res["results"]["bindings"]]
 
 @st.cache_data
-def titulos_autor(uri_autor):
+def busca_titulos(uri_autor):
     sparql = SPARQLWrapper(ENDPOINT)
     sparql.setQuery(f"""
         PREFIX dct: <http://purl.org/dc/terms/>
@@ -34,23 +35,21 @@ def titulos_autor(uri_autor):
     res = sparql.queryAndConvert()
     return [r["title"]["value"] for r in res["results"]["bindings"]]
 
-st.title("📚 Buscar autores con 'Oviedo' y listar títulos")
+st.title("🔍 Buscar ‘Oviedo’ en BVMC y listar títulos")
 
-autores = busca_autores("oviedo")
+autores = busca_autores("Oviedo")
 if not autores:
     st.error("No se encontró ningún autor con 'Oviedo'")
 else:
-    uri_sel, nombre_sel = st.selectbox(
-        "Seleccioná un autor:", autores, format_func=lambda x: x[1]
-    )
+    uri_sel, nombre_sel = st.selectbox("Seleccioná un autor:", autores, format_func=lambda x: x[1])
     if st.button("Mostrar títulos"):
-        titulos = titulos_autor(uri_sel)
+        titulos = busca_titulos(uri_sel)
         if titulos:
             df = pd.DataFrame({"Título": titulos})
             gb = GridOptionsBuilder.from_dataframe(df)
             gb.configure_default_column(editable=False)
             gb.configure_selection("single", use_checkbox=False)
-            gridOptions = gb.build()
-            AgGrid(df, gridOptions=gridOptions, update_mode=GridUpdateMode.NO_UPDATE, height=300, theme="alpine")
+            gridOps = gb.build()
+            AgGrid(df, gridOptions=gridOps, update_mode=GridUpdateMode.NO_UPDATE, height=300, theme="alpine")
         else:
             st.warning("Este autor no tiene títulos registrados.")
