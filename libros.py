@@ -70,7 +70,6 @@ def registrar_libro():
 def registrar_autor():
     st.title("✍️ Registrar autor")
 
-    nombre_input = st.text_input("Apellido, Nombre del autor").strip()
 
     def capitalizar_nombre(nombre):
         return " ".join([s.capitalize() if not s.isupper() else s for s in re.split(r"[\s\-\.]", nombre)])
