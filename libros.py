@@ -1,55 +1,46 @@
 import streamlit as st
 import pandas as pd
-from SPARQLWrapper import SPARQLWrapper, JSON
+import requests
+from bs4 import BeautifulSoup
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
-# Endpoint SPARQL correcto
-ENDPOINT = "http://data.cervantesvirtual.com/openrdf-sesame/repositories/data"
+st.title("🔍 Buscar autor y títulos en BVMC (scraping)")
 
-@st.cache_data
-def busca_autores(parte):
-    sparql = SPARQLWrapper(ENDPOINT)
-    sparql.setQuery(f"""
-        PREFIX foaf: <http://xmlns.com/foaf/0.1/>
-        SELECT DISTINCT ?autor ?name WHERE {{
-          ?autor a foaf:Person ;
-                 foaf:name ?name .
-          FILTER(CONTAINS(LCASE(?name), LCASE("{parte}")))
-        }} LIMIT 10
-    """)
-    sparql.setReturnFormat(JSON)
-    res = sparql.queryAndConvert()
-    return [(b["autor"]["value"], b["name"]["value"]) for b in res["results"]["bindings"]]
+def buscar_autor_uri(texto):
+    url = f"https://www.cervantesvirtual.com/search/?q={texto}"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
+    enlace = soup.select_one("a[href*='/person/']")
+    return enlace["href"] if enlace else None
 
-@st.cache_data
-def busca_titulos(uri_autor):
-    sparql = SPARQLWrapper(ENDPOINT)
-    sparql.setQuery(f"""
-        PREFIX dct: <http://purl.org/dc/terms/>
-        SELECT DISTINCT ?title WHERE {{
-          ?work dct:creator <{uri_autor}> ;
-                dct:title ?title .
-        }} LIMIT 10
-    """)
-    sparql.setReturnFormat(JSON)
-    res = sparql.queryAndConvert()
-    return [r["title"]["value"] for r in res["results"]["bindings"]]
+def obtener_titulos_de_autor(uri_autor, max_titulos=10):
+    url = f"https://www.cervantesvirtual.com{uri_autor}"
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, "html.parser")
+    titulos = [
+        tag.get_text(strip=True)
+        for tag in soup.select("ul.obras li a")
+    ][:max_titulos]
+    return titulos
 
-st.title("🔍 Buscar ‘Oviedo’ en BVMC y listar títulos")
-
-autores = busca_autores("Oviedo")
-if not autores:
-    st.error("No se encontró ningún autor con 'Oviedo'")
-else:
-    uri_sel, nombre_sel = st.selectbox("Seleccioná un autor:", autores, format_func=lambda x: x[1])
-    if st.button("Mostrar títulos"):
-        titulos = busca_titulos(uri_sel)
-        if titulos:
-            df = pd.DataFrame({"Título": titulos})
-            gb = GridOptionsBuilder.from_dataframe(df)
-            gb.configure_default_column(editable=False)
-            gb.configure_selection("single", use_checkbox=False)
-            gridOps = gb.build()
-            AgGrid(df, gridOptions=gridOps, update_mode=GridUpdateMode.NO_UPDATE, height=300, theme="alpine")
+nombre = st.text_input("Ingresa el nombre del autor (ej. Oviedo)")
+if st.button("Buscar títulos"):
+    if not nombre.strip():
+        st.warning("Por favor ingresa un nombre.")
+    else:
+        uri = buscar_autor_uri(nombre)
+        if not uri:
+            st.error(f"No se encontró ningún autor relacionado con '{nombre}'.")
         else:
-            st.warning("Este autor no tiene títulos registrados.")
+            st.success(f"Autor encontrado: {uri}")
+            titulos = obtener_titulos_de_autor(uri)
+            if not titulos:
+                st.warning("El autor no tiene títulos listados o la estructura cambió.")
+            else:
+                df = pd.DataFrame({"Título": titulos})
+                gb = GridOptionsBuilder.from_dataframe(df)
+                gb.configure_default_column(editable=False, sortable=True, filter=True)
+                gb.configure_selection("single", use_checkbox=False)
+                grid = gb.build()
+                AgGrid(df, gridOptions=grid, update_mode=GridUpdateMode.NO_UPDATE,
+                       height=300, theme="alpine")
