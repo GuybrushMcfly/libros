@@ -70,21 +70,44 @@ def registrar_autor():
 
     nombre_input = st.text_input("Apellido, Nombre del autor").strip()
 
-    if st.button("Ingresar autor") and nombre_input:
-        # --- Normalizaciones ---
-        nombre_formal = nombre_input.upper()
-        partes = [parte.strip() for parte in nombre_formal.split(",")]
-        if len(partes) == 2:
-            nombre_visual = f"{partes[1].title()} {partes[0].title()}"
+    def procesar_autor(input_texto):
+        texto = input_texto.strip()
+        if "," in texto:
+            partes = [p.strip() for p in texto.split(",")]
+            if len(partes) == 2:
+                apellido, nombre = partes
+            else:
+                apellido, nombre = texto.upper(), ""
         else:
-            nombre_visual = nombre_input.title()
-
+            # Si no hay coma, intentar separar por último espacio
+            tokens = texto.split()
+            if len(tokens) >= 2:
+                apellido = " ".join(tokens[:-1])
+                nombre = tokens[-1]
+            else:
+                apellido = texto
+                nombre = ""
+        
+        nombre_formal = f"{apellido.upper()}, {nombre.upper()}".strip()
+        nombre_visual = f"{nombre.capitalize()} {apellido.capitalize()}".strip()
         sin_tildes = unidecode(nombre_formal)
-        nombre_normalizado = re.sub(r"[^A-Z]", "", sin_tildes.upper())
+        nombre_normalizado = unidecode(f"{apellido}{nombre}").replace(" ", "").lower()
 
-        # --- Buscar coincidencias ---
-        result = supabase.table("autores").select("*").ilike("nombre_formal", f"%{partes[0]}%").execute()
-        coincidencias = result.data if result.data else []
+        return {
+            "nombre_formal": nombre_formal,
+            "nombre_visual": nombre_visual,
+            "sin_tildes": sin_tildes,
+            "nombre_normalizado": nombre_normalizado
+        }
+
+    if st.button("Ingresar autor") and nombre_input:
+        datos = procesar_autor(nombre_input)
+
+        # --- Buscar coincidencias por nombre_formal o nombre_normalizado ---
+        coincidencias = supabase.table("autores") \
+            .select("*") \
+            .ilike("nombre_normalizado", f"%{datos['nombre_normalizado']}%") \
+            .execute().data
 
         if coincidencias:
             st.warning("⚠️ Se encontraron autores similares:")
@@ -93,14 +116,8 @@ def registrar_autor():
             if not st.button("Confirmar igualmente"):
                 st.stop()
 
-        # --- Insertar en Supabase ---
-        nuevo = {
-            "nombre_formal": nombre_formal,
-            "nombre_visual": nombre_visual,
-            "sin_tildes": sin_tildes,
-            "nombre_normalizado": nombre_normalizado
-        }
-        supabase.table("autores").insert(nuevo).execute()
+        # --- Insertar si no hay coincidencias o se confirma ---
+        supabase.table("autores").insert(datos).execute()
         st.success("✅ Autor registrado correctamente.")
 
 
