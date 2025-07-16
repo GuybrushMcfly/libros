@@ -113,7 +113,7 @@ def registrar_autor():
         existentes = [a["nombre_normalizado"] for a in autores_db if "nombre_normalizado" in a]
     
         # Similares por difflib
-        similares = difflib.get_close_matches(datos["nombre_normalizado"], existentes, n=5, cutoff=0.75)
+        similares = difflib.get_close_matches(datos["nombre_normalizado"], existentes, n=5, cutoff=0.60)
     
         # Coincidencias en Supabase por LIKE
         coincidencias = supabase.table("autores") \
