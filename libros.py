@@ -1,5 +1,19 @@
 import streamlit as st
 
+from supabase import create_client, Client
+
+# Probar conexión a Supabase
+try:
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    supabase: Client = create_client(url, key)
+
+    # Intentar una consulta mínima
+    response = supabase.table("autores").select("id").limit(1).execute()
+    st.success("✅ Conexión con Supabase exitosa.")
+except Exception as e:
+    st.error(f"❌ Error al conectar con Supabase: {e}")
+
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
 
