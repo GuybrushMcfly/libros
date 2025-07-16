@@ -3,10 +3,14 @@ from supabase import create_client
 from unidecode import unidecode
 import re
 
-# --- Conexión a Supabase ---
-SUPABASE_URL = st.secrets["supabase_url"]
-SUPABASE_SERVICE_KEY = st.secrets["supabase_key"]
-supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+@st.cache_resource
+def init_connection():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_SERVICE_KEY"]
+    return create_client(url, key)
+
+supabase = init_connection()
 
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
