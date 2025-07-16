@@ -2,35 +2,13 @@ import streamlit as st
 
 st.set_page_config(page_title="Librería", layout="wide")
 
-# 📌 Menú principal con submenús (sin lógica aún)
-seleccion = st.navigation(
-    items={
-        "INGRESOS": [
-            "Registrar libro",
-            "Registrar editorial",   # futuro
-            "Registrar proveedor"    # futuro
-        ],
-        "BUSQUEDA": [
-            "Buscar libro",
-            "Buscar editorial",      # futuro
-            "Buscar proveedor"       # futuro
-        ],
-        "VENTAS": [
-            "opcion1",
-            "opcion2"
-        ],
-        "STOCK": [
-            "opcion1",
-            "opcion2"
-        ],
-        "PEDIDOS": [
-            "opcion1",
-            "opcion2"
-        ],
-    },
-    label="📚 Menú principal",
-    position="top",  # 👈 esto activa la navegación superior
-)
+pages = {
+    "INGRESOS": ["Registrar libro", "Registrar editorial", "Registrar proveedor"],
+    "BUSQUEDA": ["Buscar libro", "Buscar editorial", "Buscar proveedor"],
+    "VENTAS": ["opcion1", "opcion2"],
+    "STOCK": ["opcion1", "opcion2"],
+    "PEDIDOS": ["opcion1", "opcion2"],
+}
 
-# Muestra la selección actual
-st.markdown(f"## Página seleccionada: **{seleccion}**")
+pg = st.navigation(pages, position="top")
+pg.run()
