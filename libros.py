@@ -1,5 +1,12 @@
 import streamlit as st
+from supabase import create_client
+from unidecode import unidecode
+import re
 
+# --- Conexión a Supabase ---
+SUPABASE_URL = st.secrets["supabase_url"]
+SUPABASE_SERVICE_KEY = st.secrets["supabase_key"]
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
@@ -54,6 +61,45 @@ def registrar_libro():
             st.write("Stock:", cantidad)
 
 
+def registrar_autor():
+    st.title("✍️ Registrar autor")
+
+    nombre_input = st.text_input("Apellido, Nombre del autor").strip()
+
+    if st.button("Ingresar autor") and nombre_input:
+        # --- Normalizaciones ---
+        nombre_formal = nombre_input.upper()
+        partes = [parte.strip() for parte in nombre_formal.split(",")]
+        if len(partes) == 2:
+            nombre_visual = f"{partes[1].title()} {partes[0].title()}"
+        else:
+            nombre_visual = nombre_input.title()
+
+        sin_tildes = unidecode(nombre_formal)
+        nombre_normalizado = re.sub(r"[^A-Z]", "", sin_tildes.upper())
+
+        # --- Buscar coincidencias ---
+        result = supabase.table("autores").select("*").ilike("nombre_formal", f"%{partes[0]}%").execute()
+        coincidencias = result.data if result.data else []
+
+        if coincidencias:
+            st.warning("⚠️ Se encontraron autores similares:")
+            for autor in coincidencias:
+                st.write(f"- {autor['nombre_formal']} ({autor['nombre_visual']})")
+            if not st.button("Confirmar igualmente"):
+                st.stop()
+
+        # --- Insertar en Supabase ---
+        nuevo = {
+            "nombre_formal": nombre_formal,
+            "nombre_visual": nombre_visual,
+            "sin_tildes": sin_tildes,
+            "nombre_normalizado": nombre_normalizado
+        }
+        supabase.table("autores").insert(nuevo).execute()
+        st.success("✅ Autor registrado correctamente.")
+
+
 def registrar_editorial():
     st.title("🏷️ Registrar editorial")
 
@@ -86,10 +132,13 @@ def historial_pedidos():
 
 # --- Menú de navegación ---
 pages = {
+
     "📥 INGRESOS": [
         st.Page(registrar_libro, title="Registrar libro", icon=":material/library_add:"),
         st.Page(registrar_editorial, title="Registrar editorial", icon=":material/edit:"),
         st.Page(registrar_proveedor, title="Registrar proveedor", icon=":material/business:"),
+        st.Page(registrar_autor, title="Registrar autor", icon=":material/person_add:"),  # nuevo
+    ],
     ],
     "🔍 BÚSQUEDA": [
         st.Page(buscar_libros, title="Buscar libros", icon=":material/search:"),
