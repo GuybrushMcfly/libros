@@ -139,7 +139,7 @@ pages = {
         st.Page(registrar_proveedor, title="Registrar proveedor", icon=":material/business:"),
         st.Page(registrar_autor, title="Registrar autor", icon=":material/person_add:"),  # nuevo
     ],
-    ],
+
     "🔍 BÚSQUEDA": [
         st.Page(buscar_libros, title="Buscar libros", icon=":material/search:"),
         st.Page(buscar_ventas, title="Buscar ventas", icon=":material/receipt_long:"),
