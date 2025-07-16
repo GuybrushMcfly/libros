@@ -91,8 +91,8 @@ def registrar_autor():
         nombre_formal = f"{apellido.upper()}, {nombre.upper()}".strip()
         nombre_visual = f"{nombre.capitalize()} {apellido.capitalize()}".strip()
         sin_tildes = unidecode(nombre_formal)
-        nombre_normalizado = unidecode(f"{apellido}{nombre}").replace(" ", "").lower()
-
+        nombre_normalizado = unidecode(f"{apellido} {nombre}").lower().strip()
+        
         return {
             "nombre_formal": nombre_formal,
             "nombre_visual": nombre_visual,
