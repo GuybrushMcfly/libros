@@ -122,8 +122,17 @@ def registrar_autor():
                 f"nombre_normalizado.ilike.%{datos['nombre_normalizado']}%,"
                 f"nombre_normalizado.ilike.%{nombre_normalizado_invertido}%"
             ).execute().data
+
+         # Comparación flexible: ¿algún nombre existente contiene este?
+        coincidencias_flex = [
+            autor for autor in autores_db
+            if datos["nombre_normalizado"] in autor["nombre_normalizado"]
+            or autor["nombre_normalizado"] in datos["nombre_normalizado"]
+]
+       
     
-        if similares or coincidencias:
+        
+        if similares or coincidencias or coincidencias_flex:
             st.warning("⚠️ Se encontraron autores similares ya registrados:")
             for autor in coincidencias:
                 st.markdown(f"- **{autor['nombre_formal']}** – {autor['nombre_visual']}")
