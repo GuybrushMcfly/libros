@@ -1,26 +1,5 @@
 import streamlit as st
 
-from supabase import create_client, Client
-import streamlit as st
-
-try:
-    url = st.secrets["SUPABASE_URL"]
-    key = st.secrets["SUPABASE_SERVICE_KEY"]
-    supabase: Client = create_client(url, key)
-
-    # Llamar a la función RPC que devuelve las tablas
-    response = supabase.rpc("listar_tablas").execute()
-
-    if response.status_code == 200:
-        tablas = [row["tabla"] for row in response.data]
-        st.success("✅ Conectado a Supabase")
-        st.write("📋 Tablas disponibles:")
-        st.table(tablas)
-    else:
-        st.error("❌ No se pudieron obtener las tablas.")
-
-except Exception as e:
-    st.error(f"❌ Error al conectar con Supabase: {e}")
 
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
