@@ -1,6 +1,5 @@
-streamlit
+streamlit>=1.46.0
 requests
 pandas
 streamlit-aggrid
-SPARQLWrapper
-bs4
+
