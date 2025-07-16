@@ -54,7 +54,7 @@ def registrar_libro():
 
     # Modal: agregar autor
     if st.session_state.get("modal_autor"):
-        with st.modal("Agregar nuevo autor"):
+        with st.dialog("Agregar nuevo autor"):
             nombres = st.text_input("Nombre/s")
             apellidos = st.text_input("Apellido/s")
             if st.button("Guardar autor"):
