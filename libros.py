@@ -110,6 +110,8 @@ def registrar_autor():
     if st.button("Ingresar autor") and nombre_input:
         datos = procesar_autor(nombre_input)
 
+        
+
         # Traer autores ya registrados
         autores_db = supabase.table("autores").select("nombre_formal, nombre_visual, nombre_normalizado").execute().data
 
@@ -117,15 +119,18 @@ def registrar_autor():
         existentes = [a["nombre_normalizado"] for a in autores_db if "nombre_normalizado" in a]
         similares = difflib.get_close_matches(datos["nombre_normalizado"], existentes, n=5, cutoff=0.75)
 
-        # Mostrar coincidencias si hay
-        coincidencias = [a for a in autores_db if a["nombre_normalizado"] in similares]
-        if coincidencias:
-            st.warning("⚠️ Se encontraron autores similares:")
-            df = pd.DataFrame(coincidencias)[["nombre_formal", "nombre_visual"]]
-            st.dataframe(df, hide_index=True)
+        # Variante invertida para comparar ambas combinaciones
+        nombre_normalizado_invertido = unidecode(f"{nombre} {apellido}").lower().strip()
+        
+        # Buscar autores donde el nombre_normalizado contenga ambas palabras
+        # (ya sea en el orden original o invertido)
+        coincidencias = supabase.table("autores") \
+            .select("*") \
+            .or_(
+                f"nombre_normalizado.ilike.%{datos['nombre_normalizado']}%,"
+                f"nombre_normalizado.ilike.%{nombre_normalizado_invertido}%"
+            ).execute().data
 
-            if not st.button("Confirmar igualmente"):
-                st.stop()
 
         # Insertar autor si no hay coincidencias o se confirma
         supabase.table("autores").insert(datos).execute()
