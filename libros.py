@@ -2,7 +2,7 @@ import streamlit as st
 from supabase import create_client
 from unidecode import unidecode
 import re
-
+import pandas as pd 
 
 @st.cache_resource
 def init_connection():
@@ -87,12 +87,12 @@ def registrar_autor():
             else:
                 apellido = texto
                 nombre = ""
-        
+
         nombre_formal = f"{apellido.upper()}, {nombre.upper()}".strip()
         nombre_visual = f"{nombre.capitalize()} {apellido.capitalize()}".strip()
         sin_tildes = unidecode(nombre_formal)
         nombre_normalizado = unidecode(f"{apellido} {nombre}").lower().strip()
-        
+
         return {
             "nombre_formal": nombre_formal,
             "nombre_visual": nombre_visual,
@@ -103,7 +103,7 @@ def registrar_autor():
     if st.button("Ingresar autor") and nombre_input:
         datos = procesar_autor(nombre_input)
 
-        # --- Buscar coincidencias por nombre_formal o nombre_normalizado ---
+        # --- Buscar coincidencias por nombre_normalizado ---
         coincidencias = supabase.table("autores") \
             .select("*") \
             .ilike("nombre_normalizado", f"%{datos['nombre_normalizado']}%") \
@@ -111,8 +111,9 @@ def registrar_autor():
 
         if coincidencias:
             st.warning("⚠️ Se encontraron autores similares:")
-            for autor in coincidencias:
-                st.write(f"- {autor['nombre_formal']} ({autor['nombre_visual']})")
+            df = pd.DataFrame(coincidencias)[["nombre_formal", "nombre_visual"]]
+            st.dataframe(df, hide_index=True)
+
             if not st.button("Confirmar igualmente"):
                 st.stop()
 
