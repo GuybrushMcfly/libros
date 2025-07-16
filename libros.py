@@ -1,56 +1,53 @@
 import streamlit as st
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
-st.title("🔍 Buscar 'Oviedo' en BVMC vía JSON embebido")
+st.title("🔍 Buscar 'Oviedo' en BVMC vía JSON-LD")
 
-def get_person_json_uri(texto):
-    # Buscar la página HTML del autor con ID 360
-    url = "https://data.cervantesvirtual.com/person/360"
+def obtener_datos_autor(id_autor):
+    url = (
+        "https://data.cervantesvirtual.com/getRDF"
+        "?uri=http://data.cervantesvirtual.com/person/360"
+        "&format=jsonld"
+    )
     r = requests.get(url)
     if r.status_code != 200:
+        st.error("Error al llamar a la API JSON-LD")
         return None
-    soup = BeautifulSoup(r.text, "html.parser")
-    # Buscar enlace "Exportar: JSON"
-    link = soup.find('a', string="JSON")
-    return link["href"] if link else None
-
-def load_person_json(json_uri):
-    r = requests.get(json_uri)
-    if r.status_code != 200:
+    try:
+        return r.json()
+    except Exception:
+        st.error("No se pudo parsear JSON desde JSON-LD")
         return None
-    return r.json()
 
-def extract_titles(person_data, max_titulos=10):
-    roles = person_data.get("roles", [])
-    for rol in roles:
-        if rol.get("role") == "autor":
-            obras = rol.get("works", [])[:max_titulos]
-            return [w.get("title") for w in obras]
-    return []
+def extraer_titulos(data, max_titulos=10):
+    # JSON-LD viene con estructura lista de objetos
+    for obj in data:
+        if obj.get("@id", "").endswith("/person/360"):
+            works = obj.get("http://purl.org/dc/terms/creator", [])
+            # alternativamente buscar predicados relacionados a obras
+            break
+    # No es estándar: vamos a extraer todos los títulos que aparezcan
+    titulos = []
+    for obj in data:
+        title = obj.get("http://purl.org/dc/terms/title")
+        if title:
+            if isinstance(title, list):
+                titulos.extend([t.get("@value") for t in title if "@value" in t])
+            elif isinstance(title, str):
+                titulos.append(title)
+    return titulos[:max_titulos]
 
-# 🛠️ Flujo de ejecución
-st.info("Buscando autor que contenga 'Oviedo'…")
-json_uri = get_person_json_uri("Oviedo")
-if not json_uri:
-    st.error("No se encontró la URL JSON de Gonzalo Fernández de Oviedo.")
-else:
-    st.success(f"URL JSON: {json_uri}")
-    person = load_person_json(json_uri)
-    if not person:
-        st.error("No se pudo cargar el JSON desde la URL.")
+data = obtener_datos_autor(360)
+if data:
+    titulos = extraer_titulos(data)
+    if not titulos:
+        st.warning("No se encontró ningún título en los datos JSON-LD.")
     else:
-        st.success(f"Autor: {person.get('name')}")
-        titulos = extract_titles(person)
-        if not titulos:
-            st.warning("No se encontraron títulos en los roles de autor.")
-        else:
-            df = pd.DataFrame({"Título": titulos})
-            gb = GridOptionsBuilder.from_dataframe(df)
-            gb.configure_default_column(editable=False, sortable=True, filter=True)
-            gb.configure_selection("single", use_checkbox=False)
-            AgGrid(df, gridOptions=gb.build(),
-                   update_mode=GridUpdateMode.NO_UPDATE,
-                   height=300, theme="alpine")
+        df = pd.DataFrame({"Título": titulos})
+        gb = GridOptionsBuilder.from_dataframe(df)
+        gb.configure_default_column(sortable=True, filter=True, editable=False)
+        gb.configure_selection("single", use_checkbox=False)
+        AgGrid(df, gridOptions=gb.build(), update_mode=GridUpdateMode.NO_UPDATE,
+               height=300, theme="alpine")
