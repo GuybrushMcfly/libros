@@ -72,6 +72,17 @@ def registrar_autor():
 
     nombre_input = st.text_input("Apellido, Nombre del autor").strip()
 
+    def capitalizar_nombre(texto: str) -> str:
+        partes = texto.split()
+        partes_cap = []
+        for parte in partes:
+            if "." in parte:
+                partes_cap.append(parte.upper())  # Ej: J.K.
+            else:
+                partes_cap.append(parte.capitalize())  # Ej: Rowling, Van, De
+        return " ".join(partes_cap)
+    
+
     def procesar_autor(input_texto):
         texto = input_texto.strip()
         if "," in texto:
@@ -84,7 +95,8 @@ def registrar_autor():
             nombre = tokens[-1] if len(tokens) >= 2 else ""
 
         nombre_formal = f"{apellido.upper()}, {nombre.upper()}".strip()
-        nombre_visual = f"{nombre.capitalize()} {apellido.capitalize()}".strip()
+        nombre_visual = f"{capitalizar_nombre(nombre)} {capitalizar_nombre(apellido)}".strip()
+
         sin_tildes = unidecode(nombre_formal)
         nombre_normalizado = unidecode(f"{apellido} {nombre}").lower().strip()
 
