@@ -1,70 +1,81 @@
 import streamlit as st
 
-st.set_page_config(
-    layout="wide",
-    page_title="Librería",
-    page_icon=":books:"
-)
+def main():
+    # Configuración de la página
+    st.set_page_config(
+        page_title="Mi Aplicación",
+        page_icon="🏠",
+        layout="wide"
+    )
+    
+    # CSS personalizado para el menú
+    st.markdown("""
+    <style>
+    .nav-container {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-bottom: 2px solid #e6e9ef;
+        margin-bottom: 2rem;
+        border-radius: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Título principal
+    st.title("🏠 Mi Aplicación Web")
+    
+    # Contenedor del menú de navegación
+    with st.container():
+        st.markdown('<div class="nav-container">', unsafe_allow_html=True)
+        
+        # Menú principal horizontal
+        col1, col2, col3 = st.columns([2, 2, 6])
+        
+        with col1:
+            opcion_principal = st.selectbox(
+                "📋 Menú Principal",
+                ["Análisis", "Configuración"],
+                key="menu_principal"
+            )
+        
+        with col2:
+            if opcion_principal == "Análisis":
+                subopcion = st.selectbox(
+                    "📊 Análisis",
+                    ["Datos", "Reportes"],
+                    key="submenu_analisis"
+                )
+            else:  # Configuración
+                subopcion = st.selectbox(
+                    "⚙️ Configuración",
+                    ["Usuario", "Sistema"],
+                    key="submenu_configuracion"
+                )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Separador visual
+    st.markdown("---")
+    
+    # Mostrar selección actual
+    st.info(f"Navegación actual: **{opcion_principal}** → **{subopcion}**")
+    
+    # Contenido basado en la selección
+    if opcion_principal == "Análisis":
+        if subopcion == "Datos":
+            st.header("📊 Sección de Datos")
+            st.write("Contenido para análisis de datos...")
+        elif subopcion == "Reportes":
+            st.header("📈 Sección de Reportes")
+            st.write("Contenido para reportes...")
+    
+    elif opcion_principal == "Configuración":
+        if subopcion == "Usuario":
+            st.header("👤 Configuración de Usuario")
+            st.write("Contenido para configuración de usuario...")
+        elif subopcion == "Sistema":
+            st.header("🔧 Configuración del Sistema")
+            st.write("Contenido para configuración del sistema...")
 
-st.logo("https://www.streamlit.io/images/brand/streamlit-mark-color.svg", link="https://streamlit.io")
-
-# --- Página: Registrar libro ---
-def registrar_libro():
-    st.title("📘 Registrar libro")
-    st.write("Aquí irá el formulario para registrar un nuevo libro.")
-
-# --- Página: Registrar editorial ---
-def registrar_editorial():
-    st.title("🏢 Registrar editorial")
-    st.write("Formulario futuro para ingresar una nueva editorial.")
-
-# --- Página: Registrar proveedor ---
-def registrar_proveedor():
-    st.title("🚚 Registrar proveedor")
-    st.write("Formulario futuro para registrar un proveedor.")
-
-# --- Página: Buscar libro ---
-def buscar_libro():
-    st.title("🔍 Buscar libro")
-    st.write("Buscador de libros.")
-
-# --- Página: Buscar editorial ---
-def buscar_editorial():
-    st.title("📖 Buscar editorial")
-    st.write("Buscador de editoriales.")
-
-# --- Página: Buscar proveedor ---
-def buscar_proveedor():
-    st.title("🏬 Buscar proveedor")
-    st.write("Buscador de proveedores.")
-
-# --- Definición de páginas por sección ---
-pages = [
-    # INGRESOS
-    st.Page(registrar_libro, title="Registrar libro", icon=":material/library_add:", section="INGRESOS"),
-    st.Page(registrar_editorial, title="Registrar editorial", icon=":material/business:", section="INGRESOS"),
-    st.Page(registrar_proveedor, title="Registrar proveedor", icon=":material/local_shipping:", section="INGRESOS"),
-
-    # BÚSQUEDA
-    st.Page(buscar_libro, title="Buscar libro", icon=":material/search:", section="BUSQUEDA"),
-    st.Page(buscar_editorial, title="Buscar editorial", icon=":material/menu_book:", section="BUSQUEDA"),
-    st.Page(buscar_proveedor, title="Buscar proveedor", icon=":material/store:", section="BUSQUEDA"),
-
-    # VENTAS
-    st.Page(lambda: st.write("Contenido ventas > opción 1"), title="Registrar venta", icon=":material/point_of_sale:", section="VENTAS"),
-    st.Page(lambda: st.write("Contenido ventas > opción 2"), title="Historial ventas", icon=":material/history:", section="VENTAS"),
-
-    # STOCK
-    st.Page(lambda: st.write("Contenido stock > opción 1"), title="Ver stock", icon=":material/inventory:", section="STOCK"),
-    st.Page(lambda: st.write("Contenido stock > opción 2"), title="Movimientos", icon=":material/sync_alt:", section="STOCK"),
-
-    # PEDIDOS
-    st.Page(lambda: st.write("Contenido pedidos > opción 1"), title="Registrar pedido", icon=":material/add_shopping_cart:", section="PEDIDOS"),
-    st.Page(lambda: st.write("Contenido pedidos > opción 2"), title="Seguimiento", icon=":material/track_changes:", section="PEDIDOS"),
-]
-
-# --- Menú superior ---
-current_page = st.navigation(pages, position="top")
-
-# --- Ejecutar la página seleccionada ---
-current_page.run()
+if __name__ == "__main__":
+    main()
