@@ -160,8 +160,15 @@ def registrar_libro():
                     "subcategoria_id": subcategoria_id
                 }
                 
-                # Limpieza final por si algún valor es "NULL", NaN, etc.
-                libro_data = {k: (None if str(v).upper() == "NULL" or pd.isna(v) else v) for k, v in libro_data.items()}
+                # Limpieza final para convertir cualquier 'NULL', NaN o pd.NA en None
+                for k, v in libro_data.items():
+                    if isinstance(v, str) and v.strip().upper() == "NULL":
+                        libro_data[k] = None
+                    elif isinstance(v, float) and pd.isna(v):
+                        libro_data[k] = None
+                    elif isinstance(v, pd._libs.missing.NAType):
+                        libro_data[k] = None
+
 
                 st.write("📦 Datos a insertar:", libro_data)   
                 resultado = supabase.table("libros").insert(libro_data).execute()
