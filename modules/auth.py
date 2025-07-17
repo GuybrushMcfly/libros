@@ -12,7 +12,7 @@ def init_connection():
     return create_client(url, key)
 
 def contraseña_valida(pwd: str) -> bool:
-    return len(pwd) >= 6 and re.search(r"\d", pwd)
+    return len(pwd) >= 6 and re.search(r"\d", pwd) is not None
 
 def hashear_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
@@ -21,7 +21,7 @@ def login():
     ahora = datetime.datetime.now()
     supabase = init_connection()
 
-    # --- Logout automático por inactividad ---
+    # --- Logout por inactividad ---
     if "last_activity" in st.session_state:
         minutos = (ahora - st.session_state["last_activity"]).total_seconds() / 60
         if minutos > TIEMPO_MAX_SESION_MIN:
@@ -32,7 +32,7 @@ def login():
             st.stop()
     st.session_state["last_activity"] = ahora
 
-    # --- Cargar usuarios desde Supabase ---
+    # --- Cargar usuarios activos desde tabla 'acceso' ---
     resultado = supabase.table("acceso")\
         .select("usuario, password, cambiar_password, activo")\
         .eq("activo", True).execute()
@@ -43,14 +43,8 @@ def login():
         st.stop()
 
     credentials = {
-        "usernames": {},
-        "cookie": {
-            "expiry_days": 0.007,  # ~10 minutos
-            "key": "clave_segura_app_libreria",
-            "name": "libreria_sesion"
-        }
+        "usernames": {}
     }
-
     for u in usuarios:
         usuario = u.get("usuario", "").strip().lower()
         password = u.get("password", "")
@@ -62,19 +56,23 @@ def login():
             "email": f"{usuario}@ejemplo.com"
         }
 
-    # --- Instanciar Authenticator ---
+    if not credentials["usernames"]:
+        st.error("⚠️ No hay usuarios válidos para autenticación.")
+        st.stop()
+
+    # --- Configuración del autenticador ---
     authenticator = stauth.Authenticate(
-        credentials=credentials,  # 👈 incluye "usernames"
+        credentials=credentials,
         cookie_name="libreria_sesion",
         key="clave_segura_app_libreria",
-        cookie_expiry_days=0.007
+        cookie_expiry_days=0.007  # ≈10 minutos
     )
 
-
+    # --- Login ---
     try:
         nombre, estado, usuario = authenticator.login()
     except Exception as e:
-        st.error("❌ Error en el login.")
+        st.error(f"❌ Error en el login: {e}")
         st.stop()
 
     if estado is None:
@@ -94,7 +92,6 @@ def login():
             .eq("usuario", usuario).maybe_single().execute().data
         cambiar_password = datos["cambiar_password"] if datos else False
 
-        # Guardar último acceso
         supabase.table("acceso").update({
             "ultimo_acceso": ahora.isoformat()
         }).eq("usuario", usuario).execute()
