@@ -16,8 +16,7 @@ nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_i
 
 # Controles estrictos post-login
 if not autenticado or "usuario" not in st.session_state:
-    st.warning("🔒 Debés iniciar sesión para acceder.")
-    st.stop()
+    st.stop()  # Ya mostramos los mensajes en el módulo de login
 
 if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
