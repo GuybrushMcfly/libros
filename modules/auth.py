@@ -56,17 +56,22 @@ def login():
             "email": f"{usuario}@ejemplo.com"
         }
 
-    if not credentials["usernames"]:
-        st.error("⚠️ No hay usuarios válidos para autenticación.")
-        st.stop()
-
-    # --- Configuración del autenticador ---
+    credentials = {
+        "usernames": {...},
+        "cookie": {
+            "expiry_days": 0.007,
+            "key": "clave_segura_app_libreria",
+            "name": "libreria_sesion"
+        }
+    }
+    
     authenticator = stauth.Authenticate(
-        credentials=credentials,
-        cookie_name="libreria_sesion",
-        key="clave_segura_app_libreria",
-        cookie_expiry_days=0.007  # ≈10 minutos
+        credentials=credentials["usernames"],
+        cookie_name=credentials["cookie"]["name"],
+        key=credentials["cookie"]["key"],
+        cookie_expiry_days=credentials["cookie"]["expiry_days"]
     )
+
 
     # --- Login ---
     try:
