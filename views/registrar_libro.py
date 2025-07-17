@@ -28,17 +28,19 @@ def registrar_libro():
     # --- Categoría/Subcategoría en cascada ---
     col_cat, col_subcat = st.columns(2)
     with col_cat:
-        categoria_nombre = st.selectbox("Categoría", ["-Seleccioná-"] + df_categorias["nombre"].tolist())
+        categoria_nombre = st.selectbox("Categoría", ["-Seleccioná-"] + df_categorias["nombre"].tolist(), key="cat")
         categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0] if categoria_nombre != "-Seleccioná-" else None
+    
     with col_subcat:
         opciones_sub = ["-Seleccioná-"]
         subcategoria_id = None
         if categoria_id:
             subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
             opciones_sub += subcats["nombre"].tolist()
-        subcat_nombre = st.selectbox("Subcategoría", opciones_sub)
+        subcat_nombre = st.selectbox("Subcategoría", opciones_sub, key="subcat")
         if categoria_id and subcat_nombre != "-Seleccioná-":
             subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
+
 
     # --- Autor principal y coautores ---
     col_autor, col_editorial = st.columns(2)
