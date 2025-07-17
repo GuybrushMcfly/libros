@@ -3,7 +3,12 @@ from modules.auth import login
 from views import registrar_libro, ver_stock  # Importá otras vistas cuando estén listas
 
 # --- Configuración inicial ---
-st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚", initial_sidebar_state="expanded")
+st.set_page_config(
+    layout="wide",
+    page_title="Gestión Librería",
+    page_icon="📚",
+    initial_sidebar_state="expanded"
+)
 
 # --- Login de usuario ---
 login_info = login()
@@ -21,8 +26,9 @@ if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Función para cerrar sesión ---
-def cerrar_sesion():
+# --- Función para cerrar sesión correctamente ---
+def cerrar_sesion(authenticator):
+    authenticator.logout("Cerrando sesión...", "main")
     st.session_state.clear()
     st.rerun()
 
@@ -43,7 +49,7 @@ elif seccion == "Ventas":
 
 st.sidebar.markdown("---")
 if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
-    cerrar_sesion()
+    cerrar_sesion(authenticator)
 
 st.sidebar.markdown("📚 *Gestión Librería v1.0*")
 
