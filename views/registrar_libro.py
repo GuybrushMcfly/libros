@@ -29,7 +29,11 @@ def registrar_libro():
     col_cat, col_subcat = st.columns(2)
     with col_cat:
         categoria_nombre = st.selectbox("Categoría", ["- Seleccioná categoría -"] + df_categorias["nombre"].tolist(), key="cat")
-        categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0] if categoria_nombre != "- Seleccioná categoría -" else None
+        categoria_id = None
+        if categoria_nombre != "- Seleccioná categoría -":
+            fila = df_categorias[df_categorias["nombre"] == categoria_nombre]
+            if not fila.empty:
+                categoria_id = fila.iloc[0]["id"]
     
     with col_subcat:
         opciones_sub = ["- Seleccioná subcategoría -"]
@@ -38,8 +42,11 @@ def registrar_libro():
             subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
             opciones_sub += subcats["nombre"].tolist()
         subcat_nombre = st.selectbox("Subcategoría", opciones_sub, key="subcat")
-        if categoria_id and subcat_nombre != "- Seleccioná -":
-            subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
+        if categoria_id and subcat_nombre != "- Seleccioná subcategoría -":
+            fila_sub = subcats[subcats["nombre"] == subcat_nombre]
+            if not fila_sub.empty:
+                subcategoria_id = fila_sub.iloc[0]["id"]
+
 
 
     # --- Autor principal y coautores ---
