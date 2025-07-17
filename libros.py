@@ -358,11 +358,38 @@ def ver_stock():
             st.exception(e)
             return
 
-    st.success("✅ Datos cargados correctamente.")
-    st.write("Libros:", len(libros_data))
-    st.write("Stock:", len(stock_data))
-    st.write("Editoriales:", len(editoriales_data))
-    st.write("Autores:", len(autores_data))
+    # --- Convertir a DataFrames ---
+    df_libros = pd.DataFrame(libros_data)
+    df_stock = pd.DataFrame(stock_data)
+    df_editoriales = pd.DataFrame(editoriales_data)
+    df_autores = pd.DataFrame(autores_data)
+
+    # --- Unir libros con stock y editorial ---
+    df = df_libros.merge(df_stock, left_on="id", right_on="libro_id", how="left")
+    df = df.merge(df_editoriales, left_on="editorial_id", right_on="id", suffixes=("", "_editorial"))
+
+    # --- Tabla 1: Stock por editorial ---
+    st.markdown("### 🏷️ Stock por editorial")
+    tabla_editorial = df.groupby("nombre")["cantidad_actual"].sum().reset_index()
+    tabla_editorial.columns = ["Editorial", "Total en stock"]
+    tabla_editorial = tabla_editorial.sort_values("Total en stock", ascending=False)
+    st.dataframe(tabla_editorial, use_container_width=True)
+
+    st.markdown("---")
+
+    # --- Tabla 2: Filtro por autor ---
+    st.markdown("### ✍️ Libros por autor")
+
+    opciones_autores = df_autores["nombre_formal"].dropna().sort_values().tolist()
+    seleccion_autor = st.selectbox("Seleccioná un autor", ["- Seleccioná -"] + opciones_autores)
+
+    if seleccion_autor != "- Seleccioná -":
+        autor_id = df_autores[df_autores["nombre_formal"] == seleccion_autor]["id"].values[0]
+        df_filtrado = df[df["autor_id"] == autor_id][[
+            "titulo", "nombre", "cantidad_actual", "precio_venta_actual", "anio", "ubicacion"
+        ]]
+        df_filtrado.columns = ["Título", "Editorial", "Stock", "Precio venta", "Año", "Ubicación"]
+        st.dataframe(df_filtrado, use_container_width=True)
 
 
 
