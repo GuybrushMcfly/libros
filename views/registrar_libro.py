@@ -65,9 +65,21 @@ def registrar_libro():
         mostrar_modal_autor()
     if st.session_state.get("modal_editorial"):
         mostrar_modal_editorial()
+   
 
-    autor_id = df_autores[df_autores["nombre_formal"] == seleccion_autor]["id"].values[0] if seleccion_autor != "- Seleccionar autor -" else None
-    editorial_id = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]["id"].values[0] if seleccion_editorial != "- Seleccionar editorial -" else None
+    # --- Asignación segura de autor_id ---
+    autor_id = None
+    if seleccion_autor != "- Seleccionar autor -":
+        fila_autor = df_autores[df_autores["nombre_formal"] == seleccion_autor]
+        if not fila_autor.empty:
+            autor_id = fila_autor.iloc[0]["id"]
+
+    # --- Asignación segura de editorial_id ---
+    editorial_id = None
+    if seleccion_editorial != "- Seleccionar editorial -":
+        fila_editorial = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
+        if not fila_editorial.empty:
+            editorial_id = fila_editorial.iloc[0]["id"]
 
     # --- Coautores ---
     if "coautores" not in st.session_state:
