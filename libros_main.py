@@ -2,17 +2,8 @@ import streamlit as st
 from modules.auth import login
 from views import (
     registrar_libro,
-    registrar_editorial,
-    registrar_proveedor,
-    registrar_autor,
-    buscar_libros,
-    buscar_ventas,
-    registrar_venta,
-    historial_ventas,
     ver_stock,
-    actualizar_stock,
-    registrar_pedido,
-    historial_pedidos
+
 )
 
 # --- Configuración general ---
