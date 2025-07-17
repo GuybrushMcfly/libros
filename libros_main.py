@@ -13,7 +13,6 @@ if not login_info:
 
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
-
 if not autenticado:
     st.stop()
 
