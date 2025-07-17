@@ -331,15 +331,39 @@ def historial_ventas():
 def ver_stock():
     st.title("📦 Ver stock")
 
-    try:
-        libros_data = supabase.table("libros").select("*").execute().data
-        stock_data = supabase.table("stock").select("*").execute().data
-        editoriales_data = supabase.table("editoriales").select("*").execute().data
-        autores_data = supabase.table("autores").select("id, nombre_formal").execute().data
-    except Exception as e:
-        st.error("❌ Error al cargar datos desde Supabase.")
-        st.exception(e)
-        return
+    with st.spinner("🔄 Cargando datos desde Supabase..."):
+        try:
+            libros_data = supabase.table("libros").select("*").execute().data
+            if not libros_data:
+                st.warning("📚 No se encontraron libros en la tabla.")
+                return
+
+            stock_data = supabase.table("stock").select("*").execute().data
+            if not stock_data:
+                st.warning("📦 No se encontraron registros en la tabla 'stock'.")
+                return
+
+            editoriales_data = supabase.table("editoriales").select("id, nombre").execute().data
+            if not editoriales_data:
+                st.warning("🏷️ No se encontraron editoriales.")
+                return
+
+            autores_data = supabase.table("autores").select("id, nombre_formal").execute().data
+            if not autores_data:
+                st.warning("✍️ No se encontraron autores.")
+                return
+
+        except Exception as e:
+            st.error("❌ Error al cargar datos desde Supabase.")
+            st.exception(e)
+            return
+
+    st.success("✅ Datos cargados correctamente.")
+    st.write("Libros:", len(libros_data))
+    st.write("Stock:", len(stock_data))
+    st.write("Editoriales:", len(editoriales_data))
+    st.write("Autores:", len(autores_data))
+
 
 
 
