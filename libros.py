@@ -331,6 +331,77 @@ def historial_ventas():
 def ver_stock():
     st.title("📦 Ver stock")
 
+    # --- Cargar datos necesarios ---
+    libros_data = supabase.table("libros").select("*").execute().data
+    stock_data = supabase.table("stock").select("*").execute().data
+    editoriales_data = supabase.table("editoriales").select("*").execute().data
+    autores_data = supabase.table("autores").select("id, nombre_formal").execute().data
+
+    # --- Convertir a DataFrames ---
+    df_libros = pd.DataFrame(libros_data)
+    df_stock = pd.DataFrame(stock_data)
+    df_editoriales = pd.DataFrame(editoriales_data)
+    df_autores = pd.DataFrame(autores_data)
+
+    # --- Unir datos ---
+    df = df_libros.merge(df_stock, left_on="id", right_on="libro_id", how="left")
+    df = df.merge(df_editoriales, left_on="editorial_id", right_on="id", suffixes=("", "_editorial"))
+    df = df.merge(df_autores, left_on="autor_id", right_on="id", suffixes=("", "_autor"))
+
+    # --- Renombrar columnas útiles ---
+    df.rename(columns={
+        "nombre": "editorial",
+        "nombre_formal": "autor"
+    }, inplace=True)
+
+    # --- INDICADORES PRINCIPALES ---
+    total_titulos = df["titulo"].nunique()
+    total_ejemplares = df["cantidad_actual"].sum()
+    editorial_top = df.groupby("editorial")["cantidad_actual"].sum().idxmax()
+    autor_top = df["autor"].value_counts().idxmax()
+    libros_sin_stock = df[df["cantidad_actual"] == 0].shape[0]
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+    col1.metric("📚 Títulos únicos", total_titulos)
+    col2.metric("📦 Ejemplares totales", total_ejemplares)
+    col3.metric("🏷️ Editorial destacada", editorial_top)
+    col4.metric("✍️ Autor con más libros", autor_top)
+    col5.metric("⚠️ Libros sin stock", libros_sin_stock)
+
+    st.markdown("---")
+
+    # --- TABLA 1: Stock por editorial ---
+    st.subheader("🏷️ Cantidad de libros por editorial")
+    tabla_editorial = df.groupby("editorial")["cantidad_actual"].sum().reset_index()
+    tabla_editorial.columns = ["Editorial", "Total en stock"]
+    tabla_editorial = tabla_editorial.sort_values("Total en stock", ascending=False)
+    st.dataframe(tabla_editorial, use_container_width=True)
+
+    st.markdown("---")
+
+    # --- TABLA 2: Filtrado por autor ---
+    st.subheader("✍️ Libros por autor")
+
+    autores_unicos = df["autor"].dropna().unique().tolist()
+    autores_unicos.sort()
+    autor_seleccionado = st.selectbox("Seleccioná un autor", ["- Seleccioná -"] + autores_unicos)
+
+    if autor_seleccionado != "- Seleccioná -":
+        df_autor = df[df["autor"] == autor_seleccionado][[
+            "titulo", "editorial", "cantidad_actual", "precio_venta_actual", "ubicacion", "anio"
+        ]].copy()
+        df_autor.rename(columns={
+            "titulo": "Título",
+            "cantidad_actual": "Stock",
+            "precio_venta_actual": "Precio venta",
+            "ubicacion": "Ubicación",
+            "anio": "Año"
+        }, inplace=True)
+
+        st.dataframe(df_autor, use_container_width=True)
+
+
+
 def actualizar_stock():
     st.title("🛠️ Actualizar stock")
 
