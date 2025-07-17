@@ -25,12 +25,11 @@ elif requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Mostrar nombre y botón de logout arriba ---
-col1, col2 = st.columns([8, 1])
-with col1:
-    st.markdown(f"👤 {nombre}")
-with col2:
-    authenticator.logout("🚪", "main")  # Botón de logout arriba a la derecha
+# --- Función para cerrar sesión desde el menú ---
+def cerrar_sesion():
+    authenticator.logout("Cerrar sesión", "main")
+    st.success("🔓 Sesión cerrada. Redirigiendo...")
+    st.rerun()
 
 # --- Menú de navegación principal ---
 pages = {
@@ -39,6 +38,9 @@ pages = {
     ],
     "📦 STOCK": [
         st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:"),
+    ],
+    "🔓 SESIÓN": [
+        st.Page(cerrar_sesion, title="Cerrar sesión", icon=":material/logout:")
     ]
 }
 
