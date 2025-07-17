@@ -5,6 +5,7 @@ import re
 import pandas as pd
 import os
 from datetime import datetime
+import numpy as np
 
 # --- Conexión Supabase ---
 @st.cache_resource
@@ -141,6 +142,7 @@ def registrar_libro():
                     st.error("⚠️ Debés seleccionar o registrar un autor.")
                     st.stop()
 
+                # Construcción segura del diccionario libro_data
                 libro_data = {
                     "titulo": titulo.strip(),
                     "autor_id": autor_id,
@@ -160,23 +162,30 @@ def registrar_libro():
                     "subcategoria_id": subcategoria_id
                 }
                 
-                # Limpieza final para convertir cualquier 'NULL', NaN o pd.NA en None
-                for k, v in libro_data.items():
-                    if isinstance(v, str) and v.strip().upper() == "NULL":
-                        libro_data[k] = None
-                    elif isinstance(v, float) and pd.isna(v):
-                        libro_data[k] = None
-                    elif isinstance(v, pd._libs.missing.NAType):
-                        libro_data[k] = None
-
-
-                st.write("📦 Datos a insertar:", libro_data)   
-                resultado = supabase.table("libros").insert(libro_data).execute()
-
-                if resultado.data:
-                    st.success("✅ Libro registrado correctamente.")
-                else:
+                # --- Limpieza final de valores inválidos ---
+                libro_data = {
+                    k: None if (
+                        v is None or
+                        (isinstance(v, str) and v.strip().upper() == "NULL") or
+                        (isinstance(v, float) and pd.isna(v)) or
+                        isinstance(v, pd._libs.missing.NAType) or
+                        (isinstance(v, np.float64) and np.isnan(v))
+                    ) else v
+                    for k, v in libro_data.items()
+                }
+                
+                st.write("📦 Datos limpios a insertar:", libro_data)
+                
+                # Inserción protegida
+                try:
+                    resultado = supabase.table("libros").insert(libro_data).execute()
+                    if resultado.data:
+                        st.success("✅ Libro registrado correctamente.")
+                    else:
+                        st.error("❌ No se insertó el libro, pero no hubo error explícito.")
+                except Exception as e:
                     st.error("❌ Error al registrar el libro.")
+                    st.exception(e)
 
 # --- Página: Registrar autor (manual/independiente) ---
 def registrar_autor():
