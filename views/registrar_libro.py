@@ -63,24 +63,27 @@ def registrar_libro():
         with st.form("formulario_libro"):
             titulo = st.text_input("Título del libro")
 
-            col1, col2, col3 = st.columns(3)
-            isbn = col1.text_input("ISBN")
-            anio = col2.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
-            idioma = col3.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
+            # --- CAMPOS COMENTADOS (no se usan actualmente) ---
+            # col1, col2, col3 = st.columns(3)
+            # isbn = col1.text_input("ISBN")
+            # anio = col2.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
+            # idioma = col3.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
 
             col4, col5, col6 = st.columns(3)
             formato = col4.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
             estado = col5.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
             ubicacion = col6.text_input("Ubicación")
 
-            descripcion = st.text_area("Descripción")
-            palabras_clave = st.text_input("Palabras clave (coma)")
+            # palabras_clave = st.text_input("Palabras clave (coma)")
 
             col_a, col_b, col_c, col_d = st.columns(4)
             precio_costo = col_a.number_input("💰 Precio de compra", min_value=0.0, step=0.01)
             precio_venta = col_b.number_input("🏷️ Precio de venta", min_value=0.0, step=0.01)
             cantidad = col_c.number_input("📦 Cantidad en stock", min_value=1, step=1)
             tipo_ingreso = col_d.selectbox("Tipo ingreso", ["-Seleccioná-", "STOCK HEREDADO", "INGRESO NUEVO"])
+
+            # --- CAMPO ACTIVO: Observaciones como último ---
+            observaciones = st.text_area("Observaciones")
 
             if st.form_submit_button("Registrar libro"):
                 if not titulo.strip():
@@ -94,14 +97,15 @@ def registrar_libro():
                     "titulo": titulo.strip().upper(),
                     "autor_id": autor_id,
                     "editorial_id": editorial_id,
-                    "anio": int(anio) if anio else None,
-                    "idioma": idioma if idioma != "-Seleccioná-" else None,
+                    # "anio": int(anio) if anio else None,
+                    # "idioma": idioma if idioma != "-Seleccioná-" else None,
                     "formato": formato if formato != "-Seleccioná-" else None,
                     "estado": estado if estado != "-Seleccioná-" else None,
-                    "descripcion": descripcion.strip(),
-                    "isbn": isbn.strip(),
+                    # "descripcion": descripcion.strip(),
+                    # "isbn": isbn.strip(),
                     "ubicacion": ubicacion.strip(),
-                    "palabras_clave": [p.strip() for p in palabras_clave.split(",")] if palabras_clave else None,
+                    # "palabras_clave": [p.strip() for p in palabras_clave.split(",")] if palabras_clave else None,
+                    "observaciones": observaciones.strip() if observaciones else None,
                     "fecha_creacion": datetime.now().isoformat(),
                     "subcategoria_id": subcategoria_id
                 })
