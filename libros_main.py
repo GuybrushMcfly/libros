@@ -1,6 +1,6 @@
 import streamlit as st
 from modules.auth import login
-from views import registrar_libro, ver_stock
+from views import registrar_libro, ver_stock  # Importá otras vistas cuando estén listas
 
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚", initial_sidebar_state="expanded")
@@ -26,18 +26,20 @@ def cerrar_sesion():
     st.session_state.clear()
     st.rerun()
 
-# --- Sidebar personalizado ---
-st.sidebar.markdown(f"**👤 {nombre}**")
+# --- Sidebar de navegación ---
+st.sidebar.title("📚 Menú de navegación")
+st.sidebar.markdown(f"👤 **{nombre}**")
 st.sidebar.markdown("---")
 
-# --- Menú de navegación lateral con texto descriptivo ---
-st.sidebar.markdown("### 📥 Gestión de Ingresos")
-if st.sidebar.button("📘 Registrar libro", use_container_width=True):
-    st.session_state["pagina"] = "registrar_libro"
+seccion = st.sidebar.selectbox("Sección", ["", "Libros", "Clientes", "Ventas"])
 
-st.sidebar.markdown("### 📦 Control de Stock")
-if st.sidebar.button("📦 Ver stock", use_container_width=True):
-    st.session_state["pagina"] = "ver_stock"
+subvista = None
+if seccion == "Libros":
+    subvista = st.sidebar.selectbox("Acción", ["Registrar libro", "Ver stock"])
+elif seccion == "Clientes":
+    subvista = st.sidebar.selectbox("Acción", ["Nuevo pedido", "Ver pedidos"])
+elif seccion == "Ventas":
+    subvista = st.sidebar.selectbox("Acción", ["Nueva venta", "Historial de ventas"])
 
 st.sidebar.markdown("---")
 if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
@@ -45,12 +47,15 @@ if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True, type="seco
 
 st.sidebar.markdown("📚 *Gestión Librería v1.0*")
 
-# --- Renderizar la vista seleccionada ---
-pagina = st.session_state.get("pagina", "registrar_libro")
-
-if pagina == "registrar_libro":
-    registrar_libro.registrar_libro()
-elif pagina == "ver_stock":
-    ver_stock.ver_stock()
+# --- Renderizar la vista según la selección ---
+if seccion == "Libros":
+    if subvista == "Registrar libro":
+        registrar_libro.registrar_libro()
+    elif subvista == "Ver stock":
+        ver_stock.ver_stock()
+elif seccion == "Clientes":
+    st.info("🧾 Módulo de pedidos aún no implementado.")
+elif seccion == "Ventas":
+    st.info("💰 Módulo de ventas aún no implementado.")
 else:
-    st.info("Seleccioná una opción del menú lateral.")
+    st.info("Seleccioná una sección en el menú lateral para comenzar.")
