@@ -144,14 +144,14 @@ def registrar_libro():
                 libro_data = {
                     "titulo": titulo.strip(),
                     "autor_id": autor_id,
-                    "editorial": editorial.strip() or None,
+                    "editorial": editorial.strip() if editorial else None,
                     "anio": int(anio) if anio else None,
                     "idioma": idioma if idioma != "-Seleccioná-" else None,
                     "formato": formato if formato != "-Seleccioná-" else None,
                     "estado": estado if estado != "-Seleccioná-" else None,
-                    "descripcion": descripcion.strip() or None,
-                    "isbn": isbn.strip() or None,
-                    "ubicacion": ubicacion.strip() or None,
+                    "descripcion": descripcion.strip() if descripcion else None,
+                    "isbn": isbn.strip() if isbn else None,
+                    "ubicacion": ubicacion.strip() if ubicacion else None,
                     "palabras_clave": [p.strip() for p in palabras_clave.split(",")] if palabras_clave else None,
                     "fecha_creacion": datetime.now().isoformat(),
                     "cantidad": int(cantidad),
@@ -159,7 +159,6 @@ def registrar_libro():
                     "precio_venta": float(precio_venta),
                     "subcategoria_id": subcategoria_id
                 }
-
                 st.write("📦 Datos a insertar:", libro_data)   
                 resultado = supabase.table("libros").insert(libro_data).execute()
 
