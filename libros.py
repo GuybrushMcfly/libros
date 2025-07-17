@@ -218,7 +218,20 @@ def confirmar_tipo_stock():
 
             st.success("✅ Libro y stock registrados correctamente.")
             st.session_state["abrir_dialogo_tipo_stock"] = False
-            st.rerun()
+
+            # --- Limpieza de sesión ---
+            for key in list(st.session_state.keys()):
+                if key.startswith("factor_") or key in [
+                    "libro_data", "stock_inicial", "abrir_dialogo_tipo_stock", 
+                    "autor_selector", "cat", "subcat", "selectbox", 
+                    "titulo", "editorial", "anio", "idioma", "formato", 
+                    "estado", "descripcion", "isbn", "palabras_clave", 
+                    "ubicacion", "precio_costo", "precio_venta", "cantidad"
+                ]:
+                    del st.session_state[key]
+            
+            # Refrescar la interfaz
+            st.rerun()        
 
         except Exception as e:
             st.error("❌ Error al registrar.")
