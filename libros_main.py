@@ -1,9 +1,20 @@
 import streamlit as st
 from modules.auth import login
-from views import registrar_libro, ver_stock  # y otros que vayas creando
+from views import registrar_libro, ver_stock
 
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
+
+# --- Función para cerrar sesión simple ---
+def cerrar_sesion():
+    # Limpiar session_state completamente
+    st.session_state.clear()
+    
+    # Mostrar mensaje
+    st.success("🔓 Sesión cerrada exitosamente")
+    
+    # Redirigir inmediatamente al archivo principal
+    st.switch_page("main.py")  # Cambia "main.py" por el nombre de tu archivo
 
 # --- Login de usuario ---
 login_info = login()
@@ -21,15 +32,6 @@ if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Función para cerrar sesión como página ---
-def cerrar_sesion():
-    st.session_state.clear()
-    st.markdown("""
-        <meta http-equiv="refresh" content="0; url=/" />
-        <p>🔓 Cerrando sesión...</p>
-    """, unsafe_allow_html=True)
-    st.stop()
-
 # --- Menú de navegación principal ---
 pages = {
     "📥 INGRESOS": [
@@ -43,7 +45,7 @@ pages = {
     ]
 }
 
-# --- Mostrar nombre de usuario arriba a la izquierda (opcional) ---
+# --- Mostrar nombre de usuario arriba a la derecha ---
 st.markdown(f"<div style='text-align: right; font-size: 14px;'>👤 {nombre}</div>", unsafe_allow_html=True)
 
 # --- Ejecutar navegación ---
