@@ -51,6 +51,30 @@ def mostrar_modal_autor():
         else:
             st.error("❌ Error al agregar autor.")
 
+# 🔹 Selección de categoría (FUERA del form)
+col_cat, col_subcat = st.columns(2)
+with col_cat:
+    opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
+    categoria_nombre = st.selectbox("Categoría", opciones_categorias)
+    categoria_id = None
+    if categoria_nombre != "-Seleccioná-":
+        categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0]
+
+# 🔹 Subcategoría en cascada
+with col_subcat:
+    if categoria_id:
+        subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
+        opciones_sub = ["-Seleccioná-"] + subcats["nombre"].tolist()
+    else:
+        subcats = pd.DataFrame()
+        opciones_sub = ["-Seleccioná-"]
+    subcat_nombre = st.selectbox("Subcategoría", opciones_sub)
+    subcategoria_id = None
+    if not subcats.empty and subcat_nombre != "-Seleccioná-":
+        subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
+
+
+
 # --- Página: Registrar libro ---
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
