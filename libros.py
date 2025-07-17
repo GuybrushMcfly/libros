@@ -58,6 +58,12 @@ def registrar_libro():
     autores_db = supabase.table("autores").select("id, nombre_formal, nombre_visual").order("nombre_formal").execute().data
     df_autores = pd.DataFrame(autores_db)
 
+    categorias_db = supabase.table("categoria").select("id, nombre").order("nombre").execute().data
+    df_categorias = pd.DataFrame(categorias_db)
+
+    subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
+    df_subcategorias = pd.DataFrame(subcategorias_db)
+
     autor_id = None
 
     col1, col2 = st.columns([4, 1])
@@ -72,22 +78,20 @@ def registrar_libro():
         mostrar_modal_autor()
 
     if seleccion != "- Seleccionar autor -":
-        # Buscar por nombre_visual
         fila = df_autores[df_autores["nombre_formal"] == seleccion]
         if not fila.empty:
             autor_id = fila.iloc[0]["id"]
-           # st.info(f"Autor seleccionado: ID {autor_id}")
 
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
-        
+
             # Fila: Editorial y Año
             col1, col2 = st.columns(2)
             with col1:
                 editorial = st.text_input("Editorial")
             with col2:
                 anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
-        
+
             # Fila: Idioma, Formato y Estado
             col3, col4, col5 = st.columns(3)
             with col3:
@@ -96,20 +100,42 @@ def registrar_libro():
                 formato = st.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
             with col5:
                 estado = st.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
-        
+
             descripcion = st.text_area("Descripción")
-            isbn = st.text_input("ISBN")
+
+            # Fila: Categoría, Subcategoría e ISBN
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
+                categoria_nombre = st.selectbox("Categoría", opciones_categorias)
+                categoria_id = None
+                if categoria_nombre != "-Seleccioná-":
+                    categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0]
+            with col2:
+                if categoria_id:
+                    subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
+                    opciones_sub = ["-Seleccioná-"] + subcats["nombre"].tolist()
+                else:
+                    opciones_sub = ["-Seleccioná-"]
+                    subcats = pd.DataFrame()
+                subcat_nombre = st.selectbox("Subcategoría", opciones_sub)
+                subcategoria_id = None
+                if not subcats.empty and subcat_nombre != "-Seleccioná-":
+                    subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
+            with col3:
+                isbn = st.text_input("ISBN")
+
             palabras_clave = st.text_input("Palabras clave (separadas por coma)")
             ubicacion = st.text_input("Ubicación en estantería")
             precio_costo = st.number_input("Precio de compra", min_value=0.0, step=0.01)
             precio_venta = st.number_input("Precio de venta sugerido", min_value=0.0, step=0.01)
             cantidad = st.number_input("Cantidad en stock", min_value=1, step=1)
-        
+
             if st.form_submit_button("Registrar libro"):
                 if autor_id is None:
                     st.error("⚠️ Debés seleccionar o registrar un autor.")
                     st.stop()
-        
+
                 libro_data = {
                     "titulo": titulo.strip(),
                     "autor_id": autor_id,
@@ -126,10 +152,11 @@ def registrar_libro():
                     "cantidad": int(cantidad),
                     "precio_costo": float(precio_costo),
                     "precio_venta": float(precio_venta),
+                    "subcategoria_id": subcategoria_id
                 }
-        
+
                 resultado = supabase.table("libros").insert(libro_data).execute()
-        
+
                 if resultado.data:
                     st.success("✅ Libro registrado correctamente.")
                 else:
