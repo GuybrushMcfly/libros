@@ -64,7 +64,7 @@ def login():
 
     # --- Instanciar Authenticator ---
     authenticator = stauth.Authenticate(
-        credentials=credentials["usernames"],
+        credentials=credentials,  # 👈 incluye "usernames"
         cookie_name="libreria_sesion",
         key="clave_segura_app_libreria",
         cookie_expiry_days=0.007
