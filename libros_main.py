@@ -27,9 +27,8 @@ elif requiere_cambio:
 
 # --- Función para cerrar sesión desde el menú ---
 def cerrar_sesion():
-    authenticator.logout("Cerrar sesión", "main")
-    st.success("🔓 Sesión cerrada. Redirigiendo...")
-    st.rerun()
+    st.session_state.clear()  # Elimina toda la sesión, incluido el estado de autenticación
+    st.rerun()                # Reinicia la app inmediatamente
 
 # --- Menú de navegación principal ---
 pages = {
