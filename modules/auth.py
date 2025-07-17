@@ -42,10 +42,10 @@ def login():
             st.stop()
     st.session_state["last_activity"] = ahora
 
-    credenciales = cargar_usuarios()
-
+    credentials = cargar_usuarios()
+    
     authenticator = stauth.Authenticate(
-        credentials={"usernames": credenciales["usernames"]},
+        credentials=credentials,
         cookie_name="app_libreria",
         cookie_key="clave_super_secreta",
         cookie_expiry_days=0.02
