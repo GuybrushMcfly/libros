@@ -67,7 +67,7 @@ def login():
 
     # --- Formulario de login ---
     with st.container():
-        nombre, estado, usuario = authenticator.login(
+        login_result = authenticator.login(
             location="main",
             fields={
                 "Form name": "Iniciar sesión",
@@ -76,6 +76,13 @@ def login():
                 "Login": "Ingresar"
             }
         )
+
+if not login_result or len(login_result) != 3:
+    st.error("⚠️ Error inesperado en autenticación.")
+    return None
+
+nombre, estado, usuario = login_result
+
 
     # --- Evaluar estado ---
     if estado is None:
