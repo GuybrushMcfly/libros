@@ -159,6 +159,10 @@ def registrar_libro():
                     "precio_venta": float(precio_venta),
                     "subcategoria_id": subcategoria_id
                 }
+                
+                # Limpieza final por si algún valor es "NULL", NaN, etc.
+                libro_data = {k: (None if str(v).upper() == "NULL" or pd.isna(v) else v) for k, v in libro_data.items()}
+
                 st.write("📦 Datos a insertar:", libro_data)   
                 resultado = supabase.table("libros").insert(libro_data).execute()
 
