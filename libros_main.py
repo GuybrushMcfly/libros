@@ -1,46 +1,57 @@
 import streamlit as st
 from modules.auth import login
-from views import registrar_libro, ver_stock  # y otros que vayas creando
+from views import registrar_libro, ver_stock
 
 # --- Configuración inicial ---
-st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
+st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚", initial_sidebar_state="expanded")
 
 # --- Login de usuario ---
 login_info = login()
-if not login_info:
+if not login_info or not isinstance(login_info, tuple) or len(login_info) != 6:
     st.stop()
 
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
-# --- Controles post-login ---
-if autenticado is False:
-    st.error("❌ Usuario o contraseña incorrectos.")
+# --- Validaciones de sesión ---
+if not autenticado or "usuario" not in st.session_state:
+    st.warning("🔒 Debés iniciar sesión para acceder.")
     st.stop()
 
-elif autenticado is None:
-    st.info("🔐 Por favor ingresá tus credenciales.")
-    st.stop()
-
-elif requiere_cambio:
+if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Mostrar nombre y botón de logout arriba ---
-col1, col2 = st.columns([8, 1])
-with col1:
-    st.markdown(f"👤 {nombre}")
-with col2:
-    authenticator.logout("🚪", "main")  # Botón de logout arriba a la derecha
+# --- Función para cerrar sesión ---
+def cerrar_sesion():
+    st.session_state.clear()
+    st.rerun()
 
-# --- Menú de navegación principal ---
-pages = {
-    "📥 INGRESOS": [
-        st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon=":material/library_add:"),
-    ],
-    "📦 STOCK": [
-        st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:"),
-    ]
-}
+# --- Sidebar personalizado ---
+st.sidebar.image("logo-cap.png", use_container_width=True)
+st.sidebar.markdown(f"**👤 {nombre}**")
+st.sidebar.markdown("---")
 
-pg = st.navigation(pages, position="top")
-pg.run()
+# --- Menú de navegación lateral con texto descriptivo ---
+st.sidebar.markdown("### 📥 Gestión de Ingresos")
+if st.sidebar.button("📘 Registrar libro", use_container_width=True):
+    st.session_state["pagina"] = "registrar_libro"
+
+st.sidebar.markdown("### 📦 Control de Stock")
+if st.sidebar.button("📦 Ver stock", use_container_width=True):
+    st.session_state["pagina"] = "ver_stock"
+
+st.sidebar.markdown("---")
+if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
+    cerrar_sesion()
+
+st.sidebar.markdown("📚 *Gestión Librería v1.0*")
+
+# --- Renderizar la vista seleccionada ---
+pagina = st.session_state.get("pagina", "registrar_libro")
+
+if pagina == "registrar_libro":
+    registrar_libro.registrar_libro()
+elif pagina == "ver_stock":
+    ver_stock.ver_stock()
+else:
+    st.info("Seleccioná una opción del menú lateral.")
