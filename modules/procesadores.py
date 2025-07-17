@@ -5,26 +5,33 @@ from unidecode import unidecode
 
 def capitalizar_nombre(nombre: str) -> str:
     """
-    Capitaliza cada parte del nombre (excepto si está todo en mayúsculas).
+    Capitaliza cada parte del nombre, excepto si ya está todo en mayúsculas.
     Ej: "juan perez" → "Juan Perez", "JUAN PEREZ" → "JUAN PEREZ"
     """
-    return " ".join([s.capitalize() if not s.isupper() else s for s in re.split(r"[\s\-\.]", nombre)])
+    partes = re.split(r"([\s\-\.])", nombre.strip())
+    return "".join([p.capitalize() if not p.isupper() else p for p in partes])
 
 def procesar_autor(nombre: str, apellido: str) -> dict:
     """
     Genera variantes del nombre del autor:
-    - nombre_formal: APELLIDO, NOMBRE
+    - nombre_formal: APELLIDO, NOMBRE (o solo NOMBRE si no hay apellido)
     - nombre_visual: Nombre Apellido (capitalizado)
     - sin_tildes: versión sin tildes del nombre_formal
-    - nombre_normalizado: apellido nombre sin tildes y en minúscula
+    - nombre_normalizado: nombre completo sin tildes y en minúscula
     """
     nombre = nombre.strip()
     apellido = apellido.strip()
 
-    nombre_formal = f"{apellido.upper()}, {nombre.upper()}"
-    nombre_visual = f"{capitalizar_nombre(nombre)} {capitalizar_nombre(apellido)}"
-    sin_tildes = unidecode(nombre_formal)
-    nombre_normalizado = unidecode(f"{apellido} {nombre}").lower().strip()
+    if apellido:
+        nombre_formal = f"{apellido.upper()}, {nombre.upper()}"
+        nombre_visual = f"{capitalizar_nombre(nombre)} {capitalizar_nombre(apellido)}"
+        sin_tildes = unidecode(nombre_formal)
+        nombre_normalizado = unidecode(f"{apellido} {nombre}").lower().strip()
+    else:
+        nombre_formal = nombre.upper()
+        nombre_visual = capitalizar_nombre(nombre)
+        sin_tildes = unidecode(nombre_formal)
+        nombre_normalizado = unidecode(nombre).lower().strip()
 
     return {
         "nombre_formal": nombre_formal,
