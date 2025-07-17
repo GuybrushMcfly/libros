@@ -13,24 +13,20 @@ if not login_info:
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
 # --- Controles post-login ---
-if autenticado is False:
-    st.error("❌ Usuario o contraseña incorrectos.")
+if not autenticado or "usuario" not in st.session_state:
+    st.warning("🔒 Debés iniciar sesión para acceder.")
     st.stop()
 
-elif autenticado is None:
-    st.info("🔐 Por favor ingresá tus credenciales.")
-    st.stop()
-
-elif requiere_cambio:
+if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Función para cerrar sesión desde el menú ---
+# --- Función para cerrar sesión como página ---
 def cerrar_sesion():
     st.session_state.clear()
     st.markdown("""
         <meta http-equiv="refresh" content="0; url=/" />
-        <p>🔓 Cerrando sesión... Redirigiendo al inicio.</p>
+        <p>🔓 Cerrando sesión...</p>
     """, unsafe_allow_html=True)
     st.stop()
 
@@ -47,5 +43,9 @@ pages = {
     ]
 }
 
+# --- Mostrar nombre de usuario arriba a la izquierda (opcional) ---
+st.markdown(f"<div style='text-align: right; font-size: 14px;'>👤 {nombre}</div>", unsafe_allow_html=True)
+
+# --- Ejecutar navegación ---
 pg = st.navigation(pages, position="top")
 pg.run()
