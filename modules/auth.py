@@ -97,8 +97,3 @@ def login():
     
         return nombre, True, usuario, authenticator, supabase, cambiar_password
 
-def logout(authenticator):
-    st.title("🔓 Cerrar sesión")
-    st.success("Sesión finalizada correctamente.")
-    authenticator.logout("Cerrar sesión", "main")
-    st.rerun()
