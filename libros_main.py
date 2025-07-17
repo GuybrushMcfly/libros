@@ -29,7 +29,9 @@ pages = {
     "📦 STOCK": [
         st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:"),
     ],
-    # ... otras secciones
+    "🔓 SESIÓN": [
+        st.Page(lambda: logout(authenticator), title="Cerrar sesión", icon=":material/logout:")
+    ]
 }
 
 pg = st.navigation(pages, position="top")
