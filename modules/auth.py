@@ -45,6 +45,7 @@ def login():
     credentials = {
         "usernames": {}
     }
+    
     for u in usuarios:
         usuario = u.get("usuario", "").strip().lower()
         password = u.get("password", "")
@@ -56,11 +57,18 @@ def login():
             "email": f"{usuario}@ejemplo.com"
         }
     
+    # ✅ MISMO PATRÓN QUE LA APP FUNCIONAL
+    credentials["cookie"] = {
+        "expiry_days": 0.007,
+        "key": "clave_segura_app_libreria",
+        "name": "libreria_sesion"
+    }
+    
     authenticator = stauth.Authenticate(
         credentials=credentials,
-        cookie_name="libreria_sesion",
-        key="clave_segura_app_libreria",
-        cookie_expiry_days=0.007
+        cookie_name=credentials["cookie"]["name"],
+        cookie_key=credentials["cookie"]["key"],
+        cookie_expiry_days=credentials["cookie"]["expiry_days"]
     )
 
 
