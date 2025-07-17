@@ -143,7 +143,7 @@ def registrar_libro():
                     st.stop()
 
                 libro_data = {
-                    "titulo": titulo.strip(),
+                    "titulo": titulo.strip().upper(),
                     "autor_id": autor_id,
                     "editorial": editorial.strip() if editorial else None,
                     "anio": int(anio) if anio else None,
@@ -219,19 +219,23 @@ def confirmar_tipo_stock():
             st.success("✅ Libro y stock registrados correctamente.")
             st.session_state["abrir_dialogo_tipo_stock"] = False
 
-            # --- Limpieza de sesión ---
+            # --- LIMPIEZA de formulario tras inserción exitosa ---
             for key in list(st.session_state.keys()):
-                if key.startswith("factor_") or key in [
-                    "libro_data", "stock_inicial", "abrir_dialogo_tipo_stock", 
-                    "autor_selector", "cat", "subcat", "selectbox", 
-                    "titulo", "editorial", "anio", "idioma", "formato", 
-                    "estado", "descripcion", "isbn", "palabras_clave", 
-                    "ubicacion", "precio_costo", "precio_venta", "cantidad"
+                if key.startswith("libro_") or key in [
+                    "titulo", "editorial", "anio", "idioma", "formato", "estado",
+                    "descripcion", "isbn", "ubicacion", "palabras_clave",
+                    "precio_costo", "precio_venta", "cantidad",
+                    "autor_selector", "cat", "subcat"
                 ]:
                     del st.session_state[key]
             
-            # Refrescar la interfaz
-            st.rerun()        
+            # Reiniciar selectboxes manualmente si tienen claves fijas
+            st.session_state["autor_selector"] = "-Seleccioná-"
+            st.session_state["cat"] = "-Seleccioná-"
+            st.session_state["subcat"] = "-Seleccioná-"
+            
+            st.rerun()
+      
 
         except Exception as e:
             st.error("❌ Error al registrar.")
