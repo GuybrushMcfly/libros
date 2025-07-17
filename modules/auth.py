@@ -52,14 +52,14 @@ def login():
         "usernames": usuarios_validos
     }
 
+ 
 
     authenticator = stauth.Authenticate(
-        credentials=credentials,
-        cookie_name="app_libreria",
-        cookie_key="clave_super_secreta",
-        cookie_expiry_days=0.02
-    )
-
+        credentials,
+        "app_libreria",               # cookie_name
+        "clave_super_secreta",        # cookie_key
+        0.02                          # cookie_expiry_days
+    )    
     nombre, estado, usuario = authenticator.login()
 
     if estado:
