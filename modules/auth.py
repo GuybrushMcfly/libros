@@ -59,7 +59,12 @@ def login():
         0.02                         # cookie_expiry_days
     )
 
-    nombre, estado, usuario = authenticator.login()
+    login_result = authenticator.login()
+
+    if not isinstance(login_result, tuple) or len(login_result) != 3:
+        return None
+
+    nombre, estado, usuario = login_result
 
     if estado is False:
         st.error("❌ Usuario o contraseña incorrectos.")
