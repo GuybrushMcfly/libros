@@ -11,16 +11,16 @@ def dummy_page(titulo):
     return pagina
 
 # Crear funciones dummy usando partial para que sean pasables como st.Page
-registrar_editorial = partial(dummy_page("🏷️ Registrar editorial"))
-registrar_proveedor = partial(dummy_page("🏢 Registrar proveedor"))
-registrar_autor = partial(dummy_page("✍️ Registrar autor"))
-buscar_libros = partial(dummy_page("🔍 Buscar libros"))
-buscar_ventas = partial(dummy_page("📄 Buscar ventas"))
-registrar_venta = partial(dummy_page("💰 Registrar venta"))
-historial_ventas = partial(dummy_page("📊 Historial de ventas"))
-actualizar_stock = partial(dummy_page("🛠️ Actualizar stock"))
-registrar_pedido = partial(dummy_page("📝 Registrar pedido"))
-historial_pedidos = partial(dummy_page("📋 Historial de pedidos"))
+registrar_editorial = dummy_page("🏷️ Registrar editorial")
+registrar_proveedor = dummy_page("🏢 Registrar proveedor")
+registrar_autor = dummy_page("✍️ Registrar autor")
+buscar_libros = dummy_page("🔍 Buscar libros")
+buscar_ventas = dummy_page("📄 Buscar ventas")
+registrar_venta = dummy_page("💰 Registrar venta")
+historial_ventas = dummy_page("📊 Historial de ventas")
+actualizar_stock = dummy_page("🛠️ Actualizar stock")
+registrar_pedido = dummy_page("📝 Registrar pedido")
+historial_pedidos = dummy_page("📋 Historial de pedidos")
 # --- Configuración general ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
 
