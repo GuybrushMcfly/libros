@@ -55,6 +55,38 @@ def mostrar_modal_autor():
         else:
             st.error("❌ Error al agregar autor.")
 
+
+@st.dialog("Agregar nueva editorial")
+def mostrar_modal_editorial():
+    nombre = st.text_input("Nombre de la editorial").strip()
+
+    if st.button("Guardar editorial"):
+        if not nombre:
+            st.warning("⚠️ El nombre no puede estar vacío.")
+            return
+
+        nombre_mayus = nombre.upper()
+        
+        # Buscar si ya existe (por nombre exacto en mayúsculas)
+        existentes = supabase.table("editoriales").select("id").eq("nombre", nombre_mayus).execute().data
+        if existentes:
+            st.error("❌ Ya existe una editorial con ese nombre.")
+            return
+
+        # Insertar nueva
+        resultado = supabase.table("editoriales").insert({
+            "nombre": nombre_mayus
+        }).execute()
+
+        if resultado.data:
+            st.success("✅ Editorial registrada correctamente.")
+            st.session_state["modal_editorial"] = False
+            st.session_state["editorial_ingresada"] = nombre_mayus
+            st.rerun()
+        else:
+            st.error("❌ Error al guardar la editorial.")
+
+
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
 
@@ -122,7 +154,27 @@ def registrar_libro():
         
             col1, col2, col3 = st.columns(3)
             with col1:
-                editorial = st.text_input("Editorial")
+                # --- Editorial: selector con botón para agregar ---
+                editorial_id = None
+                editoriales_db = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
+                df_editoriales = pd.DataFrame(editoriales_db)
+                
+                opciones_editoriales = ["- Seleccionar editorial -"] + df_editoriales["nombre"].tolist()
+                col_editorial, col_boton_ed = st.columns([4, 1])
+                with col_editorial:
+                    seleccion_editorial = st.selectbox("Editorial", opciones_editoriales, key="editorial_selector")
+                with col_boton_ed:
+                    if st.button("➕ Agregar editorial"):
+                        st.session_state["modal_editorial"] = True
+                
+                if st.session_state.get("modal_editorial"):
+                    mostrar_modal_editorial()
+                
+                if seleccion_editorial != "- Seleccionar editorial -":
+                    fila = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
+                    if not fila.empty:
+                        editorial_id = fila.iloc[0]["id"]
+
             with col2:
                 isbn = st.text_input("ISBN")
             with col3:
@@ -172,7 +224,7 @@ def registrar_libro():
                 libro_data = {
                     "titulo": titulo.strip().upper(),
                     "autor_id": autor_id,
-                    "editorial": editorial.strip() if editorial else None,
+                    "editorial_id": editorial_id,
                     "anio": int(anio) if anio else None,
                     "idioma": idioma if idioma != "-Seleccioná-" else None,
                     "formato": formato if formato != "-Seleccioná-" else None,
@@ -240,6 +292,7 @@ def registrar_libro():
                     st.session_state["autor_selector"] = "- Seleccionar autor -"
                     st.session_state["cat"] = "-Seleccioná-"
                     st.session_state["subcat"] = "-Seleccioná-"
+                    st.session_state["editorial_selector"] = "- Seleccionar editorial -"
 
         
                     st.rerun()
