@@ -100,7 +100,8 @@ def registrar_libro():
     subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
 
-
+    editoriales_db = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
+    df_editoriales = pd.DataFrame(editoriales_db) if editoriales_db else pd.DataFrame(columns=["id", "nombre"])
 
     # --- Selección categoría/subcategoría ---
     col_cat, col_subcat = st.columns(2)
@@ -123,94 +124,70 @@ def registrar_libro():
         if not subcats.empty and subcat_nombre != "-Seleccioná-":
             subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
 
-    # --- Autor ---
-    autor_id = None
-    opciones = ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist()
-    seleccion = st.selectbox("Autor", opciones, key="autor_selector")
-    
-    if st.button("➕ Agregar autor"):
-        st.session_state["modal_autor"] = True
-    
-    # Línea divisoria opcional
-    st.markdown("---")
-    
+    # --- Autor y Editorial: fuera del formulario ---
+    col_autor, col_editorial = st.columns(2)
+
+    with col_autor:
+        opciones_autores = ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist()
+        seleccion_autor = st.selectbox("Autor", opciones_autores, key="autor_selector")
+        if st.button("➕ Agregar autor"):
+            st.session_state["modal_autor"] = True
+
+    with col_editorial:
+        opciones_editoriales = ["- Seleccionar editorial -"] + df_editoriales["nombre"].tolist()
+        seleccion_editorial = st.selectbox("Editorial", opciones_editoriales, key="editorial_selector")
+        if st.button("➕ Agregar editorial"):
+            st.session_state["modal_editorial"] = True
+
     if st.session_state.get("modal_autor"):
         mostrar_modal_autor()
+    if st.session_state.get("modal_editorial"):
+        mostrar_modal_editorial()
 
-    if seleccion != "- Seleccionar autor -":
-        fila = df_autores[df_autores["nombre_formal"] == seleccion]
+    # --- Obtener IDs seleccionados ---
+    autor_id = None
+    if seleccion_autor != "- Seleccionar autor -":
+        fila = df_autores[df_autores["nombre_formal"] == seleccion_autor]
         if not fila.empty:
             autor_id = fila.iloc[0]["id"]
-    
+
+    editorial_id = None
+    if seleccion_editorial != "- Seleccionar editorial -" and not df_editoriales.empty:
+        fila = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
+        if not fila.empty:
+            editorial_id = fila.iloc[0]["id"]
+
+    # --- Mostrar formulario solo si todo está seleccionado ---
     mostrar_formulario = all([
         categoria_id is not None,
         subcategoria_id is not None,
-        autor_id is not None
+        autor_id is not None,
+        editorial_id is not None
     ])
-    
+
     if mostrar_formulario:
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
-        
+
             col1, col2, col3 = st.columns(3)
             with col1:
-                # --- Editorial: selector con botón para agregar ---
-                editorial_id = None
-            
-                # Obtener editoriales
-                editoriales_db = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
-            
-                # Validar resultado y armar DataFrame seguro
-                if editoriales_db:
-                    df_editoriales = pd.DataFrame(editoriales_db)
-                else:
-                    df_editoriales = pd.DataFrame(columns=["id", "nombre"])
-            
-                # Desplegable + botón en dos columnas
-                col_editorial, col_boton_ed = st.columns([4, 1])
-                with col_editorial:
-                    opciones_editoriales = ["- Seleccionar editorial -"] + df_editoriales["nombre"].tolist()
-                    seleccion_editorial = st.selectbox("Editorial", opciones_editoriales, key="editorial_selector")
-                with col_boton_ed:
-                    if st.button("➕ Agregar editorial"):
-                        st.session_state["modal_editorial"] = True
-            
-                # Mostrar modal si fue activado
-                if st.session_state.get("modal_editorial"):
-                    mostrar_modal_editorial()
-            
-                # Obtener ID si se seleccionó una editorial válida
-                if seleccion_editorial != "- Seleccionar editorial -" and not df_editoriales.empty:
-                    fila = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
-                    if not fila.empty:
-                        editorial_id = fila.iloc[0]["id"]
-
-
-            with col2:
                 isbn = st.text_input("ISBN")
-            with col3:
+            with col2:
                 anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
-        
+            with col3:
+                idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
+
             col4, col5, col6 = st.columns(3)
             with col4:
-                idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
-            with col5:
                 formato = st.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
-            with col6:
+            with col5:
                 estado = st.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
-        
-            descripcion = st.text_area("Descripción")
-        
-       #     st.markdown(f"**Categoría seleccionada:** {categoria_nombre if categoria_id else 'No seleccionada'}")
-       #     st.markdown(f"**Subcategoría seleccionada:** {subcat_nombre if subcategoria_id else 'No seleccionada'}")
-
-            col7, col8 = st.columns(2)
-            with col7:
-                palabras_clave = st.text_input("Palabras clave (separadas por coma)")
-            with col8:
+            with col6:
                 ubicacion = st.text_input("Ubicación en estantería")
-        
-            # --- Fila con precios, cantidad y tipo de ingreso ---
+
+            descripcion = st.text_area("Descripción")
+            palabras_clave = st.text_input("Palabras clave (separadas por coma)")
+
             col_precio_costo, col_precio_venta, col_cantidad, col_tipo_ingreso = st.columns(4)
             with col_precio_costo:
                 precio_costo = st.number_input("💰 Precio de compra", min_value=0.0, step=0.01)
@@ -220,18 +197,15 @@ def registrar_libro():
                 cantidad = st.number_input("📦 Cantidad en stock", min_value=1, step=1)
             with col_tipo_ingreso:
                 tipo_ingreso = st.selectbox("Tipo de ingreso", ["-Seleccioná-", "STOCK HEREDADO", "INGRESO NUEVO"])
-        
+
             if st.form_submit_button("Registrar libro"):
                 if not titulo.strip():
                     st.error("⚠️ El título del libro es obligatorio.")
                     st.stop()
-                if autor_id is None:
-                    st.error("⚠️ Debés seleccionar o registrar un autor.")
-                    st.stop()
                 if tipo_ingreso == "-Seleccioná-":
                     st.warning("⚠️ Debés seleccionar un tipo de ingreso.")
                     st.stop()
-        
+
                 libro_data = {
                     "titulo": titulo.strip().upper(),
                     "autor_id": autor_id,
@@ -247,8 +221,8 @@ def registrar_libro():
                     "fecha_creacion": datetime.now().isoformat(),
                     "subcategoria_id": subcategoria_id
                 }
-        
-                # --- Limpieza de valores nulos o inválidos ---
+
+                # Limpieza
                 libro_data = {
                     k: None if (
                         v is None or
@@ -259,17 +233,16 @@ def registrar_libro():
                     ) else v
                     for k, v in libro_data.items()
                 }
-        
+
+
                 try:
-                    # Insertar libro
                     resultado = supabase.table("libros").insert(libro_data).execute()
                     if not resultado.data:
                         st.error("❌ No se insertó el libro.")
                         st.stop()
-        
+
                     libro_id = resultado.data[0]["id"]
-        
-                    # Insertar stock
+
                     supabase.table("stock").insert({
                         "libro_id": libro_id,
                         "cantidad_actual": int(cantidad),
@@ -277,8 +250,7 @@ def registrar_libro():
                         "precio_venta_actual": float(precio_venta),
                         "fecha_ultima_actualizacion": datetime.now().isoformat()
                     }).execute()
-        
-                    # Insertar movimiento
+
                     supabase.table("movimientos_stock").insert({
                         "libro_id": libro_id,
                         "tipo": tipo_ingreso,
@@ -287,30 +259,30 @@ def registrar_libro():
                         "fecha": datetime.now().isoformat(),
                         "detalle": "Alta inicial desde formulario"
                     }).execute()
-        
+
                     st.success("✅ Libro y stock registrados correctamente.")
-        
+
                     # --- LIMPIEZA de formulario tras inserción exitosa ---
                     for key in list(st.session_state.keys()):
                         if key.startswith("libro_") or key in [
                             "titulo", "editorial", "anio", "idioma", "formato", "estado",
                             "descripcion", "isbn", "ubicacion", "palabras_clave",
                             "precio_costo", "precio_venta", "cantidad", "tipo_ingreso",
-                            "autor_selector", "cat", "subcat"
+                            "autor_selector", "cat", "subcat", "editorial_selector"
                         ]:
                             del st.session_state[key]
-        
+
                     st.session_state["autor_selector"] = "- Seleccionar autor -"
                     st.session_state["cat"] = "-Seleccioná-"
                     st.session_state["subcat"] = "-Seleccioná-"
                     st.session_state["editorial_selector"] = "- Seleccionar editorial -"
 
-        
                     st.rerun()
-        
+
                 except Exception as e:
                     st.error("❌ Error al registrar el libro.")
                     st.exception(e)
+
 
 
 
