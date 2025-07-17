@@ -1,76 +1,73 @@
 import streamlit as st
 from modules.auth import login
-from views import registrar_libro, ver_stock
 
-# --- Configuración inicial ---
-st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
+# Configuración inicial
+st.set_page_config(
+    layout="wide",
+    page_title="Gestión Librería",
+    page_icon="📚",
+    initial_sidebar_state="collapsed"  # Sidebar inicialmente oculta
+)
 
-# --- Verificación de sesión activa ---
-def verificar_sesion():
-    if 'authentication_status' not in st.session_state:
-        return False
-    return st.session_state.get('authentication_status') == True
+# Función para verificar estado de autenticación
+def usuario_autenticado():
+    return st.session_state.get('authentication_status', False)
 
-# --- Login de usuario ---
-if not verificar_sesion():
+# Mostrar login si no está autenticado
+if not usuario_autenticado():
+    st.title("Sistema de Gestión Librería")
+    
     login_info = login()
-    if not login_info:
-        st.stop()  # Mostrar solo el formulario de login
     
-    nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
-    
-    if not autenticado:
-        st.stop()
-    
-    if requiere_cambio:
-        st.warning("⚠️ Debe cambiar su contraseña antes de continuar")
-        st.stop()
-    
-    # Guardar estado de autenticación
-    st.session_state.update({
-        'auth_data': login_info,
-        'authentication_status': True,
-        'usuario': usuario,
-        'nombre': nombre
-    })
-    st.rerun()  # Recargar para mostrar la aplicación
+    if login_info and len(login_info) == 6:
+        nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
+        
+        if autenticado:
+            if requiere_cambio:
+                st.warning("Debe cambiar su contraseña antes de continuar")
+                st.stop()
+            
+            # Guardar estado de autenticación
+            st.session_state.update({
+                'authentication_status': True,
+                'usuario': usuario,
+                'nombre': nombre,
+                'auth_data': login_info
+            })
+            st.rerun()  # Forzar recarga para mostrar la aplicación
 
-# --- Cerrar sesión ---
+    st.stop()  # Detener ejecución si no está autenticado
+
+# Función para cerrar sesión
 def cerrar_sesion():
-    if 'auth_data' in st.session_state:
-        _, _, _, authenticator, _, _ = st.session_state['auth_data']
-        authenticator.logout('logout', 'main')
-    st.session_state.clear()
-    st.rerun()
-
-# --- Interfaz principal ---
-if verificar_sesion():
-    # Obtener datos de sesión
     auth_data = st.session_state.get('auth_data')
-    nombre = st.session_state.get('nombre')
+    if auth_data:
+        try:
+            _, _, _, authenticator, _, _ = auth_data
+            authenticator.logout('logout', 'main')
+        except:
+            pass
     
+    st.session_state.clear()
+    st.experimental_rerun()
+
+# Interfaz principal (solo para autenticados)
+if usuario_autenticado():
     # Sidebar
     with st.sidebar:
-        st.markdown(f"### 👤 {nombre}")
-        st.markdown("---")
-        st.markdown("**🕒 Último acceso:**")
-        st.markdown("Ahora mismo")
+        st.markdown(f"### 👤 {st.session_state.get('nombre', 'Usuario')}")
         st.markdown("---")
         
-        if st.button("🚪 Cerrar sesión", use_container_width=True, type="primary"):
+        if st.button("🚪 Cerrar sesión", key="logout_btn", use_container_width=True):
             cerrar_sesion()
         
         st.markdown("---")
         st.markdown("*Sistema v1.0*")
 
-    # Navegación
-    pages = {
-        "📥 INGRESOS": [
-            st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon="📖")
-        ],
-        "📦 STOCK": [
-            st.Page(ver_stock.ver_stock, title="Ver stock", icon="📦")
-        ]
-    }
-    
-    st.navigation(pages, position="sidebar").run()
+    # Aquí iría tu navegación y páginas principales
+    st.success(f"Bienvenido {st.session_state.get('nombre', 'Usuario')}!")
+    # ... resto de tu lógica de la aplicación
+
+else:
+    st.warning("Por favor inicie sesión")
+    st.stop()
