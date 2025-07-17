@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 from supabase import create_client
 import datetime, bcrypt, re, os
 
-TIEMPO_MAX_SESION_MIN = 10
+TIEMPO_MAX_SESION_MIN = 10  # Tiempo máximo de sesión en minutos
 
 @st.cache_resource
 def init_connection():
@@ -35,15 +35,18 @@ def cargar_usuarios():
 
 def login():
     ahora = datetime.datetime.now()
+
+    # Verifica si la sesión expiró
     if "last_activity" in st.session_state:
         if (ahora - st.session_state["last_activity"]).total_seconds() > TIEMPO_MAX_SESION_MIN * 60:
             st.session_state.clear()
             st.warning("🔐 Sesión cerrada por inactividad.")
             st.stop()
+
     st.session_state["last_activity"] = ahora
 
+    # Cargar usuarios activos
     usuarios_validos = cargar_usuarios()
-
     if not usuarios_validos:
         st.error("❌ No se encontraron usuarios válidos.")
         st.stop()
@@ -52,14 +55,20 @@ def login():
         "usernames": usuarios_validos
     }
 
+    # Instanciar autenticador
     authenticator = stauth.Authenticate(
         credentials,
-        "app_libreria",              # cookie_name
-        "clave_super_secreta",       # cookie_key
-        0.02                         # cookie_expiry_days
+        "app_libreria",            # cookie_name
+        "clave_super_secreta",     # clave de seguridad para cookies
+        0.02                       # duración de la cookie (en días)
     )
 
-    with st.container():  # o st.sidebar si preferís el login en la barra
+    # Si hay estado inválido previo, limpiar y reiniciar
+    if "authentication_status" in st.session_state and st.session_state["authentication_status"] is None:
+        st.session_state.clear()
+        st.experimental_rerun()
+
+    with st.container():  # o st.sidebar si preferís mostrar el login en el costado
         nombre, estado, usuario = authenticator.login("Iniciar sesión", "main")
 
     if estado is False:
@@ -69,11 +78,13 @@ def login():
         st.warning("🔐 Por favor, ingresá tus credenciales.")
         return None
 
+    # Guardar datos en sesión
     st.session_state["usuario"] = usuario
     st.session_state["nombre_completo"] = nombre
+
     supabase = init_connection()
 
-    # Obtener si debe cambiar contraseña
+    # Consultar si debe cambiar contraseña
     datos = supabase.table("acceso")\
         .select("cambiar_password")\
         .eq("usuario", usuario).maybe_single().execute().data
