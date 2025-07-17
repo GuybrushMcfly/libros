@@ -35,6 +35,21 @@ def procesar_autor(nombre, apellido):
         "nombre_normalizado": nombre_normalizado
     }
 
+# --- Modal para agregar autor ---
+@st.dialog("Agregar nuevo autor")
+def mostrar_modal_autor():          
+    nombres = st.text_input("Nombre/s")
+    apellidos = st.text_input("Apellido/s")
+    if st.button("Guardar autor"):
+        datos = procesar_autor(nombres, apellidos)
+        resultado = supabase.table("autores").insert(datos).execute()
+        if resultado.data:
+            st.success("✅ Autor agregado correctamente.")
+            st.session_state["modal_autor"] = False
+            st.rerun()
+        else:
+            st.error("❌ Error al agregar autor.")
+
 # --- Página: Registrar libro ---
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
@@ -52,41 +67,15 @@ def registrar_libro():
         if st.button("➕ Agregar"):
             st.session_state["modal_autor"] = True
 
-    # Función para procesar y generar los campos del autor
-    def procesar_autor(nombres, apellidos):
-        nombre_formal = f"{apellidos.upper()}, {nombres.upper()}".strip()
-        nombre_visual = f"{nombres.title()} {apellidos.title()}".strip()
-        sin_tildes = unidecode(nombre_formal)
-        nombre_normalizado = unidecode(f"{apellidos} {nombres}").lower().strip()
-    
-        return {
-            "nombre_formal": nombre_formal,
-            "nombre_visual": nombre_visual,
-            "sin_tildes": sin_tildes,
-            "nombre_normalizado": nombre_normalizado,
-        }
-    
-    # Modal (debe ir fuera de if)
-    @st.dialog("Agregar nuevo autor")
-    def mostrar_modal_autor():          
-        nombres = st.text_input("Nombre/s")
-        apellidos = st.text_input("Apellido/s")
-        if st.button("Guardar autor"):
-            datos = procesar_autor(nombres, apellidos)
-            resultado = supabase.table("autores").insert(datos).execute()
-            if resultado.data:
-                st.success("✅ Autor agregado correctamente.")
-                st.session_state["modal_autor"] = False
-                st.rerun()
-            else:
-                st.error("❌ Error al agregar autor.")
-    
-    # Llamar al modal si corresponde
     if st.session_state.get("modal_autor"):
         mostrar_modal_autor()
 
     if seleccion != "- Seleccionar autor -":
-        autor_id = df_autores.loc[df_autores["nombre_formal"] == seleccion, "id"].values[0]
+        # Buscar por nombre_visual
+        fila = df_autores[df_autores["nombre_formal"] == seleccion]
+        if not fila.empty:
+            autor_id = fila.iloc[0]["id"]
+            st.info(f"Autor seleccionado: ID {autor_id}")
 
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
