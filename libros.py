@@ -154,26 +154,37 @@ def registrar_libro():
         
             col1, col2, col3 = st.columns(3)
             with col1:
-                # --- Editorial: selector con botón para agregar ---
-                editorial_id = None
-                editoriales_db = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
+            # --- Editorial: selector con botón para agregar ---
+            editorial_id = None
+        
+            # Obtener editoriales
+            editoriales_db = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
+        
+            # Validar resultado y armar DataFrame seguro
+            if editoriales_db:
                 df_editoriales = pd.DataFrame(editoriales_db)
-                
+            else:
+                df_editoriales = pd.DataFrame(columns=["id", "nombre"])
+        
+            # Desplegable + botón en dos columnas
+            col_editorial, col_boton_ed = st.columns([4, 1])
+            with col_editorial:
                 opciones_editoriales = ["- Seleccionar editorial -"] + df_editoriales["nombre"].tolist()
-                col_editorial, col_boton_ed = st.columns([4, 1])
-                with col_editorial:
-                    seleccion_editorial = st.selectbox("Editorial", opciones_editoriales, key="editorial_selector")
-                with col_boton_ed:
-                    if st.button("➕ Agregar editorial"):
-                        st.session_state["modal_editorial"] = True
-                
-                if st.session_state.get("modal_editorial"):
-                    mostrar_modal_editorial()
-                
-                if seleccion_editorial != "- Seleccionar editorial -":
-                    fila = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
-                    if not fila.empty:
-                        editorial_id = fila.iloc[0]["id"]
+                seleccion_editorial = st.selectbox("Editorial", opciones_editoriales, key="editorial_selector")
+            with col_boton_ed:
+                if st.button("➕ Agregar editorial"):
+                    st.session_state["modal_editorial"] = True
+        
+            # Mostrar modal si fue activado
+            if st.session_state.get("modal_editorial"):
+                mostrar_modal_editorial()
+        
+            # Obtener ID si se seleccionó una editorial válida
+            if seleccion_editorial != "- Seleccionar editorial -" and not df_editoriales.empty:
+                fila = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
+                if not fila.empty:
+                    editorial_id = fila.iloc[0]["id"]
+
 
             with col2:
                 isbn = st.text_input("ISBN")
