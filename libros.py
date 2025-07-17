@@ -58,10 +58,10 @@ def registrar_libro():
     autores_db = supabase.table("autores").select("id, nombre_formal, nombre_visual").order("nombre_formal").execute().data
     df_autores = pd.DataFrame(autores_db)
 
-    categorias_db = supabase.table("categoria").select("id, nombre").order("nombre").execute().data
+    categorias_db = supabase.table("categorias").select("id, nombre").order("nombre").execute().data
     df_categorias = pd.DataFrame(categorias_db)
 
-    subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
+    subcategorias_db = supabase.table("subcategorias").select("id, nombre, categorias_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
 
     autor_id = None
