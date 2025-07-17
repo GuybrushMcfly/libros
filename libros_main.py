@@ -13,7 +13,8 @@ if not login_info:
 
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
-if not autenticado:
+if not autenticado or "usuario" not in st.session_state:
+    st.warning("🔒 Debés iniciar sesión para acceder.")
     st.stop()
 
 if requiere_cambio:
@@ -24,7 +25,6 @@ if requiere_cambio:
 pages = {
     "📥 INGRESOS": [
         st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon=":material/library_add:"),
-        # Otros registros si se implementan como vistas completas
     ],
     "📦 STOCK": [
         st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:"),
