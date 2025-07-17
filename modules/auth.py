@@ -20,18 +20,18 @@ def cargar_usuarios():
         .select("usuario, password, activo, cambiar_password")\
         .eq("activo", True).execute()
 
-    credenciales = {"usernames": {}}
+    usuarios = {}
     for u in resultado.data:
         user = u["usuario"].strip().lower()
         password = u["password"]
         if not user or not password or not password.startswith("$2b$"):
             continue
-        credenciales["usernames"][user] = {
+        usuarios[user] = {
             "name": user,
             "password": password,
             "email": f"{user}@ejemplo.com"
         }
-    return credenciales
+    return usuarios
 
 def login():
     ahora = datetime.datetime.now()
@@ -42,8 +42,16 @@ def login():
             st.stop()
     st.session_state["last_activity"] = ahora
 
-    credentials = cargar_usuarios()
-    
+    usuarios_validos = cargar_usuarios()
+
+    if not usuarios_validos:
+        st.error("❌ No se encontraron usuarios válidos.")
+        st.stop()
+
+    credentials = {
+        "usernames": usuarios_validos
+    }
+
     authenticator = stauth.Authenticate(
         credentials=credentials,
         cookie_name="app_libreria",
@@ -55,10 +63,10 @@ def login():
 
     if estado:
         st.session_state["usuario"] = usuario
-        st.session_state["nombre_completo"] = usuario  # no hay nombre formal
+        st.session_state["nombre_completo"] = usuario
         supabase = init_connection()
 
-        # Obtener datos adicionales (como cambio de contraseña)
+        # Obtener si debe cambiar contraseña
         datos = supabase.table("acceso")\
             .select("cambiar_password")\
             .eq("usuario", usuario).maybe_single().execute().data
