@@ -13,36 +13,72 @@ if not login_info:
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
 # --- Controles post-login ---
-if not autenticado or "usuario" not in st.session_state:
-    st.warning("🔒 Debés iniciar sesión para acceder.")
+if autenticado is False:
+    st.error("❌ Usuario o contraseña incorrectos.")
     st.stop()
-
-if requiere_cambio:
+elif autenticado is None:
+    st.info("🔐 Por favor ingresá tus credenciales.")
+    st.stop()
+elif requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Header con usuario y botón de logout ---
-col1, col2 = st.columns([3, 1])
-with col1:
-    st.markdown(f"<div style='font-size: 14px; padding-top: 10px;'>👤 {nombre}</div>", unsafe_allow_html=True)
-with col2:
-    if st.button("🔓 Cerrar sesión", type="secondary"):
+# --- Sidebar con navegación ---
+with st.sidebar:
+    # Header del sidebar con usuario
+    st.markdown(f"### 👤 {nombre}")
+    st.markdown("---")
+    
+    # Menú de navegación con selectbox
+    st.markdown("### 📋 Navegación")
+    
+    page_options = {
+        "📥 Registrar libro": "registrar_libro",
+        "📦 Ver stock": "ver_stock"
+    }
+    
+    # Selectbox para navegación
+    selected_page = st.selectbox(
+        "Seleccionar página:",
+        options=list(page_options.keys()),
+        index=0
+    )
+    
+    # Obtener la página seleccionada
+    current_page = page_options[selected_page]
+    
+    st.markdown("---")
+    
+    # Métricas o información útil
+    st.markdown("### 📊 Resumen")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("📚 Libros", "---")
+    with col2:
+        st.metric("💰 Stock", "---")
+    
+    st.markdown("---")
+    
+    # Botón de logout
+    st.markdown("### 🔓 Sesión")
+    if st.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
         st.session_state.clear()
         st.success("🔓 Sesión cerrada exitosamente")
         st.rerun()
+    
+    # Información adicional en el pie del sidebar
+    st.markdown("---")
+    st.markdown("*Gestión Librería v1.0*")
 
-st.markdown("---")  # Separador visual
+# --- Contenido principal ---
+st.title("📚 Gestión Librería")
 
-# --- Menú de navegación principal (SIN logout) ---
-pages = {
-    "📥 INGRESOS": [
-        st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon=":material/library_add:"),
-    ],
-    "📦 STOCK": [
-        st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:"),
-    ]
-}
+# Mostrar breadcrumb
+st.markdown(f"📍 **{selected_page}**")
+st.markdown("---")
 
-# --- Ejecutar navegación ---
-pg = st.navigation(pages, position="top")
-pg.run()
+# Ejecutar la función correspondiente según la página seleccionada
+if current_page == 'registrar_libro':
+    registrar_libro.registrar_libro()
+elif current_page == 'ver_stock':
+    ver_stock.ver_stock()
