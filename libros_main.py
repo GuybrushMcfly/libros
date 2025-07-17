@@ -25,10 +25,11 @@ if requiere_cambio:
 
 # --- Función para cerrar sesión ---
 def cerrar_sesion():
+    authenticator.logout('Cerrar sesión', 'main')
     st.session_state.clear()
     st.rerun()
 
-# --- Solo mostrar la sidebar si el usuario está autenticado ---
+# --- Solo mostrar la sidebar y navegación si el usuario está autenticado ---
 if autenticado:
     with st.sidebar:
         st.markdown(f"### 👤 {nombre}")
@@ -43,17 +44,16 @@ if autenticado:
         st.markdown("---")
         st.markdown("*Gestión Librería v1.0*")
 
-# --- Menú de navegación principal en sidebar ---
-pages = {
-    "📥 INGRESOS": [
-        st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon=":material/library_add:")
-    ],
-    "📦 STOCK": [
-        st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:")
-    ]
-}
-
-# --- Ejecutar navegación solo si está autenticado ---
-if autenticado:
+    # --- Menú de navegación principal ---
+    pages = {
+        "📥 INGRESOS": [
+            st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon="📖")
+        ],
+        "📦 STOCK": [
+            st.Page(ver_stock.ver_stock, title="Ver stock", icon="📦")
+        ]
+    }
+    
+    # Mostrar navegación solo cuando está autenticado
     pg = st.navigation(pages, position="sidebar")
     pg.run()
