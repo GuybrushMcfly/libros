@@ -5,3 +5,5 @@ streamlit-aggrid
 supabase
 unidecode
 python-dotenv
+streamlit_authenticator
+bcrypt
