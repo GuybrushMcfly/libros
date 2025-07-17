@@ -6,21 +6,8 @@ import pandas as pd
 import os
 from datetime import datetime
 import numpy as np
-
 import streamlit.components.v1 as components
 
-components.html(
-    """
-    <script>
-    document.querySelectorAll('input').forEach(input => {
-      input.addEventListener('keydown', e => {
-        if (e.key === 'Enter') e.preventDefault();
-      });
-    });
-    </script>
-    """,
-    height=0,
-)
 
 # --- Conexión Supabase ---
 @st.cache_resource
@@ -52,6 +39,7 @@ def procesar_autor(nombre, apellido):
         "nombre_normalizado": nombre_normalizado
     }
 
+
 # --- Modal para agregar autor ---
 @st.dialog("Agregar nuevo autor")
 def mostrar_modal_autor():          
@@ -79,6 +67,13 @@ def registrar_libro():
 
     subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
+
+    mostrar_formulario = all([
+        categoria_id is not None,
+        subcategoria_id is not None,
+        autor_id is not None
+    ])
+    
 
     # --- Selección categoría/subcategoría ---
     col_cat, col_subcat = st.columns(2)
@@ -119,8 +114,14 @@ def registrar_libro():
         fila = df_autores[df_autores["nombre_formal"] == seleccion]
         if not fila.empty:
             autor_id = fila.iloc[0]["id"]
-
-        # --- Formulario de libro ---
+    
+    mostrar_formulario = all([
+        categoria_id is not None,
+        subcategoria_id is not None,
+        autor_id is not None
+    ])
+    
+    if mostrar_formulario:
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
         
@@ -241,9 +242,10 @@ def registrar_libro():
                         ]:
                             del st.session_state[key]
         
-                    st.session_state["autor_selector"] = "-Seleccioná-"
+                    st.session_state["autor_selector"] = "- Seleccionar autor -"
                     st.session_state["cat"] = "-Seleccioná-"
                     st.session_state["subcat"] = "-Seleccioná-"
+
         
                     st.rerun()
         
