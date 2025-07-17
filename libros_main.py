@@ -11,16 +11,22 @@ st.set_page_config(
 )
 
 # --- Login de usuario ---
+# --- Login de usuario ---
 login_info = login()
 if not login_info or not isinstance(login_info, tuple) or len(login_info) != 6:
     st.stop()
 
+# --- Validar el resultado del login ---
+if st.session_state.get("authentication_status") is False:
+    st.error("❌ Usuario o contraseña incorrectos.")
+    st.stop()
+elif st.session_state.get("authentication_status") is None:
+    st.warning("🔐 Ingresá tus credenciales.")
+    st.stop()
+
+# --- Extraer datos si pasó el login ---
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
-# --- Validaciones de sesión ---
-if not autenticado or "usuario" not in st.session_state:
-    st.warning("🔒 Debés iniciar sesión para acceder.")
-    st.stop()
 
 if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
