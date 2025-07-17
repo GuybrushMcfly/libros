@@ -224,9 +224,6 @@ def confirmar_tipo_stock():
             st.error("❌ Error al registrar.")
             st.exception(e)
 
-# --- Ejecutar navegación ---
-pg = st.navigation(pages, position="top")
-pg.run()
 
 # --- Mostrar el diálogo solo si fue activado ---
 if st.session_state.get("abrir_dialogo_tipo_stock", False):
