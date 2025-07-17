@@ -14,10 +14,8 @@ def capitalizar_nombre(nombre: str) -> str:
 def procesar_autor(nombre: str, apellido: str) -> dict:
     """
     Genera variantes del nombre del autor:
-    - nombre_formal: APELLIDO, NOMBRE (o solo NOMBRE si no hay apellido)
-    - nombre_visual: Nombre Apellido (capitalizado)
-    - sin_tildes: versión sin tildes del nombre_formal
-    - nombre_normalizado: nombre completo sin tildes y en minúscula
+    - Si solo hay nombre: usa solo el nombre, sin coma.
+    - Si hay apellido, se usa "APELLIDO, NOMBRE".
     """
     nombre = nombre.strip()
     apellido = apellido.strip()
