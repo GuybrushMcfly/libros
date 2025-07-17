@@ -7,16 +7,19 @@ st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="�
 
 # --- Login de usuario ---
 login_info = login()
-if not login_info:
+
+# Validar que devolvió datos completos
+if not login_info or not isinstance(login_info, tuple) or len(login_info) != 6:
     st.stop()
 
 nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
-# --- Controles post-login ---
+# Controles estrictos post-login
 if not autenticado or "usuario" not in st.session_state:
     st.warning("🔒 Debés iniciar sesión para acceder.")
     st.stop()
-elif requiere_cambio:
+
+if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
