@@ -333,7 +333,12 @@ def ver_stock():
 
     # --- Cargar datos necesarios ---
     libros_data = supabase.table("libros").select("*").execute().data
-    stock_data = supabase.table("stock").select("*").execute().data
+    try:
+        stock_data = supabase.table("stock").select("*").execute().data
+    except Exception as e:
+        st.error("❌ Error al consultar la tabla 'stock'.")
+        st.exception(e)
+        return
     editoriales_data = supabase.table("editoriales").select("*").execute().data
     autores_data = supabase.table("autores").select("id, nombre_formal").execute().data
 
