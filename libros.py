@@ -331,33 +331,6 @@ def historial_ventas():
 def ver_stock():
     st.title("📦 Ver stock")
 
-    with st.spinner("🔄 Cargando datos desde Supabase..."):
-        try:
-            libros_data = supabase.table("libros").select("*").execute().data
-            if not libros_data:
-                st.warning("📚 No se encontraron libros en la tabla.")
-                return
-
-            stock_data = supabase.table("stock").select("*").execute().data
-            if not stock_data:
-                st.warning("📦 No se encontraron registros en la tabla 'stock'.")
-                return
-
-            editoriales_data = supabase.table("editoriales").select("id, nombre").execute().data
-            if not editoriales_data:
-                st.warning("🏷️ No se encontraron editoriales.")
-                return
-
-            autores_data = supabase.table("autores").select("id, nombre_formal").execute().data
-            if not autores_data:
-                st.warning("✍️ No se encontraron autores.")
-                return
-
-        except Exception as e:
-            st.error("❌ Error al cargar datos desde Supabase.")
-            st.exception(e)
-            return
-
     # --- Convertir a DataFrames ---
     df_libros = pd.DataFrame(libros_data)
     df_stock = pd.DataFrame(stock_data)
