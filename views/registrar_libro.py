@@ -28,17 +28,17 @@ def registrar_libro():
     # --- Categoría/Subcategoría en cascada ---
     col_cat, col_subcat = st.columns(2)
     with col_cat:
-        categoria_nombre = st.selectbox("Categoría", ["-Seleccioná-"] + df_categorias["nombre"].tolist(), key="cat")
-        categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0] if categoria_nombre != "-Seleccioná-" else None
+        categoria_nombre = st.selectbox("Categoría", ["- Seleccioná categoría -"] + df_categorias["nombre"].tolist(), key="cat")
+        categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0] if categoria_nombre != "- Seleccioná categoría -" else None
     
     with col_subcat:
-        opciones_sub = ["-Seleccioná-"]
+        opciones_sub = ["- Seleccioná subcategoría -"]
         subcategoria_id = None
         if categoria_id:
             subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
             opciones_sub += subcats["nombre"].tolist()
         subcat_nombre = st.selectbox("Subcategoría", opciones_sub, key="subcat")
-        if categoria_id and subcat_nombre != "-Seleccioná-":
+        if categoria_id and subcat_nombre != "- Seleccioná -":
             subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
 
 
@@ -88,8 +88,8 @@ def registrar_libro():
             # idioma = col3.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
 
             col4, col5, col6 = st.columns(3)
-            formato = col4.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
-            estado = col5.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
+            formato = col4.selectbox("Formato", ["- Seleccioná -", "Tapa Dura", "Tapa Blanda", "Bolsillo", "Revista"])
+            estado = col5.selectbox("Estado", ["- Seleccioná -", "Nuevo", "Usado", "Réplica", "Antiguo"])
             ubicacion = col6.text_input("Ubicación")
 
             # palabras_clave = st.text_input("Palabras clave (coma)")
@@ -98,27 +98,46 @@ def registrar_libro():
             precio_costo = col_a.number_input("💰 Precio de compra", min_value=0.0, step=0.01)
             precio_venta = col_b.number_input("🏷️ Precio de venta", min_value=0.0, step=0.01)
             cantidad = col_c.number_input("📦 Cantidad en stock", min_value=1, step=1)
-            tipo_ingreso = col_d.selectbox("Tipo ingreso", ["-Seleccioná-", "STOCK HEREDADO", "INGRESO NUEVO"])
+            tipo_ingreso = col_d.selectbox("Tipo ingreso", ["- Seleccioná -", "Stock Heredado", "Stock Nuevo"])
 
             # --- CAMPO ACTIVO: Observaciones como último ---
             observaciones = st.text_area("Observaciones")
 
             if st.form_submit_button("Registrar libro"):
+                faltantes = []
+            
                 if not titulo.strip():
-                    st.error("⚠️ Título obligatorio.")
+                    faltantes.append("Título")
+                if categoria_id is None:
+                    faltantes.append("Categoría")
+                if subcategoria_id is None:
+                    faltantes.append("Subcategoría")
+                if autor_id is None:
+                    faltantes.append("Autor principal")
+                if editorial_id is None:
+                    faltantes.append("Editorial")
+                if formato == "- Seleccioná -":
+                    faltantes.append("Formato")
+                if estado == "- Seleccioná -":
+                    faltantes.append("Estado")
+                if cantidad is None or cantidad < 1:
+                    faltantes.append("Cantidad en stock")
+                if tipo_ingreso == "- Seleccioná -":
+                    faltantes.append("Tipo de ingreso")
+            
+                if faltantes:
+                    mensaje = "⚠️ Debés completar los siguientes campos obligatorios:\n\n- " + "\n- ".join(faltantes)
+                    st.warning(mensaje)
                     st.stop()
-                if tipo_ingreso == "-Seleccioná-":
-                    st.warning("⚠️ Elegí tipo de ingreso.")
-                    st.stop()
-
+            
                 datos_libro = limpiar_valores_nulos({
                     "titulo": titulo.strip().upper(),
                     # "autor_id": autor_id,
                     "editorial_id": editorial_id,
                     # "anio": int(anio) if anio else None,
                     # "idioma": idioma if idioma != "-Seleccioná-" else None,
-                    "formato": formato if formato != "-Seleccioná-" else None,
-                    "estado": estado if estado != "-Seleccioná-" else None,
+                    "formato": formato if formato != "- Seleccioná -" else None,
+                    "estado": estado if estado != "- Seleccioná -" else None,
                     # "descripcion": descripcion.strip(),
                     # "isbn": isbn.strip(),
                     "ubicacion": ubicacion.strip(),
@@ -127,21 +146,21 @@ def registrar_libro():
                     "fecha_creacion": datetime.now().isoformat(),
                     "subcategoria_id": subcategoria_id
                 })
-
+            
                 try:
                     libro = supabase.table("libros").insert(datos_libro).execute().data
                     if not libro:
                         st.error("❌ Error al insertar libro.")
                         return
                     libro_id = libro[0]["id"]
-
+            
                     # Insertar relación libro-autor principal
                     supabase.table("libros_autores").insert({
                         "libro_id": libro_id,
                         "autor_id": autor_id,
                         "orden": 1
                     }).execute()
-
+            
                     # Insertar coautores si hay
                     for idx, nombre in enumerate(st.session_state["coautores"]):
                         if nombre != "- Seleccionar -":
@@ -152,7 +171,7 @@ def registrar_libro():
                                     "autor_id": fila.iloc[0]["id"],
                                     "orden": idx + 2
                                 }).execute()
-
+            
                     supabase.table("stock").insert({
                         "libro_id": libro_id,
                         "cantidad_actual": int(cantidad),
@@ -160,7 +179,7 @@ def registrar_libro():
                         "precio_venta_actual": float(precio_venta),
                         "fecha_ultima_actualizacion": datetime.now().isoformat()
                     }).execute()
-
+            
                     supabase.table("movimientos_stock").insert({
                         "libro_id": libro_id,
                         "tipo": tipo_ingreso,
@@ -169,7 +188,7 @@ def registrar_libro():
                         "fecha": datetime.now().isoformat(),
                         "detalle": "Alta inicial desde formulario"
                     }).execute()
-
+            
                     st.success("✅ Libro y autor/es registrado/s.")
                     time.sleep(2)
                     
@@ -183,15 +202,15 @@ def registrar_libro():
                         ] or key.startswith("coautor_"):
                             del st.session_state[key]
                     
-                    st.session_state["autor_selector"] = "- Seleccionar autor -"
-                    st.session_state["cat"] = "-Seleccioná-"
-                    st.session_state["subcat"] = "-Seleccioná-"
-                    st.session_state["editorial_selector"] = "- Seleccionar editorial -"
+                    st.session_state["autor_selector"] = "- Seleccioná autor -"
+                    st.session_state["cat"] = "- Seleccioná categoría -"
+                    st.session_state["subcat"] = "- Seleccioná subcategoría -"
+                    st.session_state["editorial_selector"] = "- Seleccioná editorial -"
                     st.session_state["coautores"] = []
                     st.rerun()
-
-
-                
+            
                 except Exception as e:
                     st.error("❌ Error al registrar.")
                     st.exception(e)
+
+
