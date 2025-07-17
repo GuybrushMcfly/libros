@@ -142,7 +142,7 @@ def registrar_libro():
                     st.error("⚠️ Debés seleccionar o registrar un autor.")
                     st.stop()
 
-                # Construcción segura del diccionario libro_data
+                # --- Construcción segura del diccionario libro_data ---
                 libro_data = {
                     "titulo": titulo.strip(),
                     "autor_id": autor_id,
@@ -156,7 +156,6 @@ def registrar_libro():
                     "ubicacion": ubicacion.strip() if ubicacion else None,
                     "palabras_clave": [p.strip() for p in palabras_clave.split(",")] if palabras_clave else None,
                     "fecha_creacion": datetime.now().isoformat(),
-                    "cantidad": int(cantidad),
                     "precio_costo": float(precio_costo),
                     "precio_venta": float(precio_venta),
                     "subcategoria_id": subcategoria_id
@@ -176,17 +175,40 @@ def registrar_libro():
                 
                 st.write("📦 Datos limpios a insertar:", libro_data)
                 
-                # Inserción protegida
+                # --- Inserción protegida ---
                 try:
                     resultado = supabase.table("libros").insert(libro_data).execute()
-                    if resultado.data:
-                        st.success("✅ Libro registrado correctamente.")
-                    else:
+                    if not resultado.data:
                         st.error("❌ No se insertó el libro, pero no hubo error explícito.")
+                        st.stop()
+                
+                    st.success("✅ Libro registrado correctamente.")
+                    libro_id = resultado.data[0]["id"]
+                
+                    # --- Insertar en stock ---
+                    supabase.table("stock").insert({
+                        "libro_id": libro_id,
+                        "cantidad_actual": int(cantidad),
+                        "precio_costo": float(precio_costo),
+                        "precio_venta_actual": float(precio_venta),
+                        "fecha_ultima_actualizacion": datetime.now().isoformat()
+                    }).execute()
+                
+                    # --- Insertar movimiento inicial ---
+                    supabase.table("movimientos_stock").insert({
+                        "libro_id": libro_id,
+                        "tipo": "INGRESO INICIAL",
+                        "cantidad": int(cantidad),
+                        "precio_unitario": float(precio_costo),
+                        "fecha": datetime.now().isoformat(),
+                        "detalle": "Alta inicial desde formulario"
+                    }).execute()
+                
+                    st.success("📦 Stock inicial registrado correctamente.")
+                
                 except Exception as e:
-                    st.error("❌ Error al registrar el libro.")
+                    st.error("❌ Error al registrar el libro o el stock.")
                     st.exception(e)
-
 # --- Página: Registrar autor (manual/independiente) ---
 def registrar_autor():
     st.title("✍️ Registrar autor")
