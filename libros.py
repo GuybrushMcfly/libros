@@ -61,7 +61,7 @@ def registrar_libro():
 
     col1, col2 = st.columns([4, 1])
     with col1:
-        opciones = ["- Seleccionar autor -"] + df_autores["nombre_visual"].tolist()
+        opciones = ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist()
         seleccion = st.selectbox("Autor", opciones, key="autor_selector")
     with col2:
         if st.button("➕ Agregar"):
