@@ -180,50 +180,57 @@ def registrar_libro():
                 st.session_state["abrir_dialogo_tipo_stock"] = True
                 st.rerun()
 
-    # --- Diálogo: elegir tipo de stock ---
+# --- Diálogo: elegir tipo de stock ---
+@st.dialog("📦 Tipo de ingreso de stock")
+def confirmar_tipo_stock():
+    st.markdown("¿Cómo registrarás el stock inicial?")
+    tipo = st.radio("Seleccioná una opción", ["STOCK HEREDADO", "INGRESO NUEVO"], key="tipo_stock")
 
-    @st.dialog("📦 Tipo de ingreso de stock")
-    def confirmar_tipo_stock():
-        st.markdown("¿Cómo registrarás el stock inicial?")
-        tipo = st.radio("Seleccioná una opción", ["STOCK HEREDADO", "INGRESO NUEVO"], key="tipo_stock")
-    
-        if st.button("Registrar libro"):
-            try:
-                libro_data = st.session_state["libro_data"]
-                stock_info = st.session_state["stock_inicial"]
-                tipo_movimiento = st.session_state["tipo_stock"]
-    
-                resultado = supabase.table("libros").insert(libro_data).execute()
-                if not resultado.data:
-                    st.error("❌ No se insertó el libro.")
-                    return
-    
-                libro_id = resultado.data[0]["id"]
-    
-                supabase.table("stock").insert({
-                    "libro_id": libro_id,
-                    "cantidad_actual": stock_info["cantidad"],
-                    "precio_costo": stock_info["precio_costo"],
-                    "precio_venta_actual": stock_info["precio_venta"],
-                    "fecha_ultima_actualizacion": datetime.now().isoformat()
-                }).execute()
-    
-                supabase.table("movimientos_stock").insert({
-                    "libro_id": libro_id,
-                    "tipo": tipo_movimiento,
-                    "cantidad": stock_info["cantidad"],
-                    "precio_unitario": stock_info["precio_costo"],
-                    "fecha": datetime.now().isoformat(),
-                    "detalle": "Alta inicial desde formulario"
-                }).execute()
-    
-                st.success("✅ Libro y stock registrados correctamente.")
-                st.session_state["abrir_dialogo_tipo_stock"] = False
-                st.rerun()
-    
-            except Exception as e:
-                st.error("❌ Error al registrar.")
-                st.exception(e)
+    if st.button("Registrar libro"):
+        try:
+            libro_data = st.session_state["libro_data"]
+            stock_info = st.session_state["stock_inicial"]
+            tipo_movimiento = st.session_state["tipo_stock"]
+
+            resultado = supabase.table("libros").insert(libro_data).execute()
+            if not resultado.data:
+                st.error("❌ No se insertó el libro.")
+                return
+
+            libro_id = resultado.data[0]["id"]
+
+            supabase.table("stock").insert({
+                "libro_id": libro_id,
+                "cantidad_actual": stock_info["cantidad"],
+                "precio_costo": stock_info["precio_costo"],
+                "precio_venta_actual": stock_info["precio_venta"],
+                "fecha_ultima_actualizacion": datetime.now().isoformat()
+            }).execute()
+
+            supabase.table("movimientos_stock").insert({
+                "libro_id": libro_id,
+                "tipo": tipo_movimiento,
+                "cantidad": stock_info["cantidad"],
+                "precio_unitario": stock_info["precio_costo"],
+                "fecha": datetime.now().isoformat(),
+                "detalle": "Alta inicial desde formulario"
+            }).execute()
+
+            st.success("✅ Libro y stock registrados correctamente.")
+            st.session_state["abrir_dialogo_tipo_stock"] = False
+            st.rerun()
+
+        except Exception as e:
+            st.error("❌ Error al registrar.")
+            st.exception(e)
+
+# --- Ejecutar navegación ---
+pg = st.navigation(pages, position="top")
+pg.run()
+
+# --- Mostrar el diálogo solo si fue activado ---
+if st.session_state.get("abrir_dialogo_tipo_stock", False):
+    confirmar_tipo_stock()
 
 
 # --- Página: Registrar autor (manual/independiente) ---
