@@ -14,7 +14,7 @@ def cerrar_sesion():
     st.success("🔓 Sesión cerrada exitosamente")
     
     # Redirigir inmediatamente al archivo principal
-    st.switch_page("main.py")  # Cambia "main.py" por el nombre de tu archivo
+    st.switch_page("libros_main.py")  # Cambia "main.py" por el nombre de tu archivo
 
 # --- Login de usuario ---
 login_info = login()
