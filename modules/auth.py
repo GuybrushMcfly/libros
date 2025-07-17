@@ -66,7 +66,8 @@ def login():
     # Si hay estado inválido previo, limpiar y reiniciar
     if "authentication_status" in st.session_state and st.session_state["authentication_status"] is None:
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
+
 
     with st.container():  # o st.sidebar si preferís mostrar el login en el costado
         nombre, estado, usuario = authenticator.login("Iniciar sesión", "main")
