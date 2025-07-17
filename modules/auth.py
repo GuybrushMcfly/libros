@@ -34,6 +34,10 @@ def cargar_usuarios():
     return usuarios
 
 def login():
+    # Limpiar estado de autenticación previo si existe
+    if 'authentication_status' in st.session_state:
+        del st.session_state['authentication_status']
+    
     ahora = datetime.datetime.now()
 
     # Verifica si la sesión expiró
@@ -55,27 +59,33 @@ def login():
         "usernames": usuarios_validos
     }
 
-    # Instanciar autenticador
+    # Instanciar autenticador con opción de preauthorization
     authenticator = stauth.Authenticate(
         credentials,
         "app_libreria",            # cookie_name
         "clave_super_secreta",     # clave de seguridad para cookies
-        0.02                       # duración de la cookie (en días)
+        0.02,                     # duración de la cookie (en días)
+        preauthorized=False       # No permitir acceso sin autenticación
     )
 
-
-    with st.container():  # o st.sidebar si preferís mostrar el login en el costado
+    # Mostrar formulario de login
+    with st.container():
         nombre, estado, usuario = authenticator.login("Iniciar sesión", "main")
     
-    # Evitar loop infinito por estado inválido
-    if estado is None and st.session_state.get("authentication_status") is None:
+    # Si no se ha intentado autenticar, mostrar solo el formulario
+    if estado is None:
         st.warning("🔐 Por favor, ingresá tus credenciales.")
         return None
     
+    # Si la autenticación falló
     if estado is False:
         st.error("❌ Usuario o contraseña incorrectos.")
+        # Limpiar credenciales del session_state
+        if 'authentication_status' in st.session_state:
+            del st.session_state['authentication_status']
         return None
     
+    # Si la autenticación fue exitosa
     if estado is True:
         # Guardar datos en sesión
         st.session_state["usuario"] = usuario
@@ -96,4 +106,3 @@ def login():
         }).eq("usuario", usuario).execute()
     
         return nombre, True, usuario, authenticator, supabase, cambiar_password
-
