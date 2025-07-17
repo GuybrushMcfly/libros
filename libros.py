@@ -55,7 +55,7 @@ def mostrar_modal_autor():
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
 
-    # Cargar datos necesarios
+    # --- Cargar datos ---
     autores_db = supabase.table("autores").select("id, nombre_formal, nombre_visual").order("nombre_formal").execute().data
     df_autores = pd.DataFrame(autores_db)
 
@@ -65,7 +65,7 @@ def registrar_libro():
     subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
 
-    # 🔹 Selección dinámica de categoría y subcategoría (fuera del form)
+    # --- Selección categoría/subcategoría ---
     col_cat, col_subcat = st.columns(2)
     with col_cat:
         opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
@@ -86,7 +86,7 @@ def registrar_libro():
         if not subcats.empty and subcat_nombre != "-Seleccioná-":
             subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
 
-    # Selección de autor
+    # --- Autor ---
     autor_id = None
     col1, col2 = st.columns([4, 1])
     with col1:
@@ -104,17 +104,16 @@ def registrar_libro():
         if not fila.empty:
             autor_id = fila.iloc[0]["id"]
 
+        # --- Formulario de libro ---
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
 
-            # Fila: Editorial y Año
             col1, col2 = st.columns(2)
             with col1:
                 editorial = st.text_input("Editorial")
             with col2:
                 anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
 
-            # Fila: Idioma, Formato y Estado
             col3, col4, col5 = st.columns(3)
             with col3:
                 idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
@@ -125,11 +124,9 @@ def registrar_libro():
 
             descripcion = st.text_area("Descripción")
 
-            # Mostrar selección actual de categoría y subcategoría
             st.markdown(f"**Categoría seleccionada:** {categoria_nombre if categoria_id else 'No seleccionada'}")
             st.markdown(f"**Subcategoría seleccionada:** {subcat_nombre if subcategoria_id else 'No seleccionada'}")
 
-            # Otros campos
             isbn = st.text_input("ISBN")
             palabras_clave = st.text_input("Palabras clave (separadas por coma)")
             ubicacion = st.text_input("Ubicación en estantería")
@@ -138,11 +135,13 @@ def registrar_libro():
             cantidad = st.number_input("Cantidad en stock", min_value=1, step=1)
 
             if st.form_submit_button("Registrar libro"):
+                if not titulo.strip():
+                    st.error("⚠️ El título del libro es obligatorio.")
+                    st.stop()
                 if autor_id is None:
                     st.error("⚠️ Debés seleccionar o registrar un autor.")
                     st.stop()
 
-                # --- Construcción segura del diccionario libro_data ---
                 libro_data = {
                     "titulo": titulo.strip(),
                     "autor_id": autor_id,
@@ -156,12 +155,10 @@ def registrar_libro():
                     "ubicacion": ubicacion.strip() if ubicacion else None,
                     "palabras_clave": [p.strip() for p in palabras_clave.split(",")] if palabras_clave else None,
                     "fecha_creacion": datetime.now().isoformat(),
-                    "precio_costo": float(precio_costo),
-                    "precio_venta": float(precio_venta),
                     "subcategoria_id": subcategoria_id
                 }
-                
-                # --- Limpieza final de valores inválidos ---
+
+                # Limpieza final
                 libro_data = {
                     k: None if (
                         v is None or
@@ -172,43 +169,61 @@ def registrar_libro():
                     ) else v
                     for k, v in libro_data.items()
                 }
-                
-                st.write("📦 Datos limpios a insertar:", libro_data)
-                
-                # --- Inserción protegida ---
+
+                # Guardar en estado temporal
+                st.session_state["libro_data"] = libro_data
+                st.session_state["stock_inicial"] = {
+                    "cantidad": int(cantidad),
+                    "precio_costo": float(precio_costo),
+                    "precio_venta": float(precio_venta)
+                }
+                st.session_state["abrir_dialogo_tipo_stock"] = True
+                st.rerun()
+
+    # --- Diálogo: elegir tipo de stock ---
+    if st.session_state.get("abrir_dialogo_tipo_stock", False):
+        @st.dialog("📦 Tipo de ingreso de stock")
+        def confirmar_tipo_stock():
+            st.markdown("¿Cómo registrarás el stock inicial?")
+            tipo = st.radio("Seleccioná una opción", ["STOCK HEREDADO", "INGRESO NUEVO"])
+
+            if st.button("Registrar libro"):
                 try:
+                    libro_data = st.session_state["libro_data"]
+                    stock_info = st.session_state["stock_inicial"]
+
                     resultado = supabase.table("libros").insert(libro_data).execute()
                     if not resultado.data:
-                        st.error("❌ No se insertó el libro, pero no hubo error explícito.")
-                        st.stop()
-                
-                    st.success("✅ Libro registrado correctamente.")
+                        st.error("❌ No se insertó el libro.")
+                        return
+
                     libro_id = resultado.data[0]["id"]
-                
-                    # --- Insertar en stock ---
+
                     supabase.table("stock").insert({
                         "libro_id": libro_id,
-                        "cantidad_actual": int(cantidad),
-                        "precio_costo": float(precio_costo),
-                        "precio_venta_actual": float(precio_venta),
+                        "cantidad_actual": stock_info["cantidad"],
+                        "precio_costo": stock_info["precio_costo"],
+                        "precio_venta_actual": stock_info["precio_venta"],
                         "fecha_ultima_actualizacion": datetime.now().isoformat()
                     }).execute()
-                
-                    # --- Insertar movimiento inicial ---
+
                     supabase.table("movimientos_stock").insert({
                         "libro_id": libro_id,
-                        "tipo": "INGRESO INICIAL",
-                        "cantidad": int(cantidad),
-                        "precio_unitario": float(precio_costo),
+                        "tipo": tipo,
+                        "cantidad": stock_info["cantidad"],
+                        "precio_unitario": stock_info["precio_costo"],
                         "fecha": datetime.now().isoformat(),
                         "detalle": "Alta inicial desde formulario"
                     }).execute()
-                
-                    st.success("📦 Stock inicial registrado correctamente.")
-                
+
+                    st.success("✅ Libro y stock registrados correctamente.")
+                    st.session_state["abrir_dialogo_tipo_stock"] = False
+                    st.rerun()
+
                 except Exception as e:
-                    st.error("❌ Error al registrar el libro o el stock.")
+                    st.error("❌ Error al registrar.")
                     st.exception(e)
+
 # --- Página: Registrar autor (manual/independiente) ---
 def registrar_autor():
     st.title("✍️ Registrar autor")
