@@ -108,39 +108,43 @@ def registrar_libro():
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
         
-            col1, col2 = st.columns(2)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 editorial = st.text_input("Editorial")
             with col2:
+                isbn = st.text_input("ISBN")
+            with col3:
                 anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
         
-            col3, col4, col5 = st.columns(3)
-            with col3:
-                idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
+            col4, col5, col6 = st.columns(3)
             with col4:
-                formato = st.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
+                idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
             with col5:
+                formato = st.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
+            with col6:
                 estado = st.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
         
             descripcion = st.text_area("Descripción")
         
-            st.markdown(f"**Categoría seleccionada:** {categoria_nombre if categoria_id else 'No seleccionada'}")
-            st.markdown(f"**Subcategoría seleccionada:** {subcat_nombre if subcategoria_id else 'No seleccionada'}")
-        
-            isbn = st.text_input("ISBN")
-            palabras_clave = st.text_input("Palabras clave (separadas por coma)")
-            ubicacion = st.text_input("Ubicación en estantería")
+       #     st.markdown(f"**Categoría seleccionada:** {categoria_nombre if categoria_id else 'No seleccionada'}")
+       #     st.markdown(f"**Subcategoría seleccionada:** {subcat_nombre if subcategoria_id else 'No seleccionada'}")
+
+            col7, col8 = st.columns(2)
+            with col7:
+                palabras_clave = st.text_input("Palabras clave (separadas por coma)")
+            with col8:
+                ubicacion = st.text_input("Ubicación en estantería")
         
             # --- Fila con precios, cantidad y tipo de ingreso ---
             col_precio_costo, col_precio_venta, col_cantidad, col_tipo_ingreso = st.columns(4)
             with col_precio_costo:
                 precio_costo = st.number_input("💰 Precio de compra", min_value=0.0, step=0.01)
             with col_precio_venta:
-                precio_venta = st.number_input("🏷️ Precio de venta sugerido", min_value=0.0, step=0.01)
+                precio_venta = st.number_input("🏷️ Precio de venta", min_value=0.0, step=0.01)
             with col_cantidad:
                 cantidad = st.number_input("📦 Cantidad en stock", min_value=1, step=1)
             with col_tipo_ingreso:
-                tipo_ingreso = st.selectbox("🗂️ Tipo de ingreso", ["-Seleccioná-", "STOCK HEREDADO", "INGRESO NUEVO"])
+                tipo_ingreso = st.selectbox("Tipo de ingreso", ["-Seleccioná-", "STOCK HEREDADO", "INGRESO NUEVO"])
         
             if st.form_submit_button("Registrar libro"):
                 if not titulo.strip():
