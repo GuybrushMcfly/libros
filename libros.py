@@ -51,34 +51,10 @@ def mostrar_modal_autor():
         else:
             st.error("❌ Error al agregar autor.")
 
-# 🔹 Selección de categoría (FUERA del form)
-col_cat, col_subcat = st.columns(2)
-with col_cat:
-    opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
-    categoria_nombre = st.selectbox("Categoría", opciones_categorias)
-    categoria_id = None
-    if categoria_nombre != "-Seleccioná-":
-        categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0]
-
-# 🔹 Subcategoría en cascada
-with col_subcat:
-    if categoria_id:
-        subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
-        opciones_sub = ["-Seleccioná-"] + subcats["nombre"].tolist()
-    else:
-        subcats = pd.DataFrame()
-        opciones_sub = ["-Seleccioná-"]
-    subcat_nombre = st.selectbox("Subcategoría", opciones_sub)
-    subcategoria_id = None
-    if not subcats.empty and subcat_nombre != "-Seleccioná-":
-        subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
-
-
-
-# --- Página: Registrar libro ---
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
 
+    # Cargar datos necesarios
     autores_db = supabase.table("autores").select("id, nombre_formal, nombre_visual").order("nombre_formal").execute().data
     df_autores = pd.DataFrame(autores_db)
 
@@ -87,6 +63,28 @@ def registrar_libro():
 
     subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
+
+    # 🔹 Selección de categoría y subcategoría (en cascada, dentro de la función)
+    col_cat, col_subcat = st.columns(2)
+    with col_cat:
+        opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
+        categoria_nombre = st.selectbox("Categoría", opciones_categorias, key="categoria_select_outside")
+        categoria_id = None
+        if categoria_nombre != "-Seleccioná-":
+            categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0]
+
+    with col_subcat:
+        if categoria_id:
+            subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
+            opciones_sub = ["-Seleccioná-"] + subcats["nombre"].tolist()
+        else:
+            subcats = pd.DataFrame()
+            opciones_sub = ["-Seleccioná-"]
+        subcat_nombre = st.selectbox("Subcategoría", opciones_sub, key="subcategoria_select_outside")
+        subcategoria_id = None
+        if not subcats.empty and subcat_nombre != "-Seleccioná-":
+            subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
+
 
     autor_id = None
 
