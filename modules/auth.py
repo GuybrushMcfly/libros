@@ -60,7 +60,14 @@ def login():
         "clave_super_secreta",        # cookie_key
         0.02                          # cookie_expiry_days
     )    
-    nombre, estado, usuario = authenticator.login()
+
+    login_result = authenticator.login()
+    
+    if login_result is None:
+        st.stop()
+    
+    nombre, estado, usuario = login_result
+
 
     if estado:
         st.session_state["usuario"] = usuario
