@@ -64,17 +64,16 @@ def login():
     )
 
 
-    with st.container():  # o st.sidebar si preferís mostrar el login en el costado
+    with st.container():
         nombre, estado, usuario = authenticator.login(
-        location="main",
-        fields={
-            "Form name": "Iniciar sesión",
-            "Username": "Usuario",
-            "Password": "Contraseña",
-            "Login": "Ingresar"
-        }
-    )
-
+            location="main",
+            fields={
+                "Form name": "Iniciar sesión",
+                "Username": "Usuario",
+                "Password": "Contraseña",
+                "Login": "Ingresar"
+            }
+        )
     
     # Evitar loop infinito por estado inválido
     if estado is None and st.session_state.get("authentication_status") is None:
