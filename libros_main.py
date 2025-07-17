@@ -1,10 +1,24 @@
 import streamlit as st
 from modules.auth import login
-from views import (
-    registrar_libro,
-    ver_stock,
+from views import registrar_libro, ver_stock
 
-)
+# --- Funciones dummy para las páginas aún no implementadas ---
+def dummy_page(titulo):
+    def pagina():
+        st.title(titulo)
+        st.info("🔧 Esta sección aún no está implementada.")
+    return pagina
+
+registrar_editorial = dummy_page("🏷️ Registrar editorial")
+registrar_proveedor = dummy_page("🏢 Registrar proveedor")
+registrar_autor = dummy_page("✍️ Registrar autor")
+buscar_libros = dummy_page("🔍 Buscar libros")
+buscar_ventas = dummy_page("📄 Buscar ventas")
+registrar_venta = dummy_page("💰 Registrar venta")
+historial_ventas = dummy_page("📊 Historial de ventas")
+actualizar_stock = dummy_page("🛠️ Actualizar stock")
+registrar_pedido = dummy_page("📝 Registrar pedido")
+historial_pedidos = dummy_page("📋 Historial de pedidos")
 
 # --- Configuración general ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
