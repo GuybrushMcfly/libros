@@ -88,14 +88,15 @@ def registrar_libro():
 
     # --- Autor ---
     autor_id = None
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        opciones = ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist()
-        seleccion = st.selectbox("Autor", opciones, key="autor_selector")
-    with col2:
-        if st.button("➕ Agregar"):
-            st.session_state["modal_autor"] = True
-
+    opciones = ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist()
+    seleccion = st.selectbox("Autor", opciones, key="autor_selector")
+    
+    if st.button("➕ Agregar autor"):
+        st.session_state["modal_autor"] = True
+    
+    # Línea divisoria opcional
+    st.markdown("---")
+    
     if st.session_state.get("modal_autor"):
         mostrar_modal_autor()
 
