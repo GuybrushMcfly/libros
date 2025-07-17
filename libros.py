@@ -160,6 +160,7 @@ def registrar_libro():
                     "subcategoria_id": subcategoria_id
                 }
 
+                st.write("📦 Datos a insertar:", libro_data)   
                 resultado = supabase.table("libros").insert(libro_data).execute()
 
                 if resultado.data:
