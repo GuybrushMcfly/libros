@@ -63,38 +63,36 @@ def login():
         0.02                       # duración de la cookie (en días)
     )
 
-    # Si hay estado inválido previo, limpiar y reiniciar
-    if "authentication_status" in st.session_state and st.session_state["authentication_status"] is None:
-        st.session_state.clear()
-        st.rerun()
-
 
     with st.container():  # o st.sidebar si preferís mostrar el login en el costado
         nombre, estado, usuario = authenticator.login("Iniciar sesión", "main")
-
+    
+    # Evitar loop infinito por estado inválido
+    if estado is None and st.session_state.get("authentication_status") is None:
+        st.warning("🔐 Por favor, ingresá tus credenciales.")
+        return None
+    
     if estado is False:
         st.error("❌ Usuario o contraseña incorrectos.")
         return None
-    elif estado is None:
-        st.warning("🔐 Por favor, ingresá tus credenciales.")
-        return None
-
-    # Guardar datos en sesión
-    st.session_state["usuario"] = usuario
-    st.session_state["nombre_completo"] = nombre
-
-    supabase = init_connection()
-
-    # Consultar si debe cambiar contraseña
-    datos = supabase.table("acceso")\
-        .select("cambiar_password")\
-        .eq("usuario", usuario).maybe_single().execute().data
-
-    cambiar_password = datos["cambiar_password"] if datos else False
-
-    # Registrar último acceso
-    supabase.table("acceso").update({
-        "ultimo_acceso": ahora.isoformat()
-    }).eq("usuario", usuario).execute()
-
-    return nombre, True, usuario, authenticator, supabase, cambiar_password
+    
+    if estado is True:
+        # Guardar datos en sesión
+        st.session_state["usuario"] = usuario
+        st.session_state["nombre_completo"] = nombre
+    
+        supabase = init_connection()
+    
+        # Consultar si debe cambiar contraseña
+        datos = supabase.table("acceso")\
+            .select("cambiar_password")\
+            .eq("usuario", usuario).maybe_single().execute().data
+    
+        cambiar_password = datos["cambiar_password"] if datos else False
+    
+        # Registrar último acceso
+        supabase.table("acceso").update({
+            "ultimo_acceso": ahora.isoformat()
+        }).eq("usuario", usuario).execute()
+    
+        return nombre, True, usuario, authenticator, supabase, cambiar_password
