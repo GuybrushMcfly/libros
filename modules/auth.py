@@ -59,12 +59,8 @@ def login():
         0.02                         # cookie_expiry_days
     )
 
-    login_result = authenticator.login()
-
-    if not isinstance(login_result, tuple) or len(login_result) != 3:
-        return None
-
-    nombre, estado, usuario = login_result
+    with st.container():  # o st.sidebar si preferís el login en la barra
+        nombre, estado, usuario = authenticator.login("Iniciar sesión", "main")
 
     if estado is False:
         st.error("❌ Usuario o contraseña incorrectos.")
@@ -74,7 +70,7 @@ def login():
         return None
 
     st.session_state["usuario"] = usuario
-    st.session_state["nombre_completo"] = usuario
+    st.session_state["nombre_completo"] = nombre
     supabase = init_connection()
 
     # Obtener si debe cambiar contraseña
