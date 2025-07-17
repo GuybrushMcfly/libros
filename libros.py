@@ -4,6 +4,7 @@ from unidecode import unidecode
 import re
 import pandas as pd
 import os
+from datetime import datetime
 
 # --- Conexión Supabase ---
 @st.cache_resource
@@ -75,15 +76,27 @@ def registrar_libro():
         fila = df_autores[df_autores["nombre_formal"] == seleccion]
         if not fila.empty:
             autor_id = fila.iloc[0]["id"]
-            st.info(f"Autor seleccionado: ID {autor_id}")
+           # st.info(f"Autor seleccionado: ID {autor_id}")
 
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
-            editorial = st.text_input("Editorial")
-            anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
-            idioma = st.selectbox("Idioma", ["ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
-            formato = st.selectbox("Formato", ["TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
-            estado = st.selectbox("Estado", ["NUEVO", "USADO", "REPLICA", "ANTIGUO"])
+        
+            # Fila: Editorial y Año
+            col1, col2 = st.columns(2)
+            with col1:
+                editorial = st.text_input("Editorial")
+            with col2:
+                anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
+        
+            # Fila: Idioma, Formato y Estado
+            col3, col4, col5 = st.columns(3)
+            with col3:
+                idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
+            with col4:
+                formato = st.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
+            with col5:
+                estado = st.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
+        
             descripcion = st.text_area("Descripción")
             isbn = st.text_input("ISBN")
             palabras_clave = st.text_input("Palabras clave (separadas por coma)")
@@ -91,19 +104,36 @@ def registrar_libro():
             precio_costo = st.number_input("Precio de compra", min_value=0.0, step=0.01)
             precio_venta = st.number_input("Precio de venta sugerido", min_value=0.0, step=0.01)
             cantidad = st.number_input("Cantidad en stock", min_value=1, step=1)
-
+        
             if st.form_submit_button("Registrar libro"):
-                st.success("✅ Libro registrado correctamente (simulado).")
-                st.write("Título:", titulo)
-                st.write("Autor ID:", autor_id)
-                st.write("Editorial:", editorial)
-                st.write("Año:", anio)
-                st.write("Idioma:", idioma)
-                st.write("Formato:", formato)
-                st.write("Estado:", estado)
-                st.write("Precio compra:", precio_costo)
-                st.write("Precio venta:", precio_venta)
-                st.write("Stock:", cantidad)
+                if autor_id is None:
+                    st.error("⚠️ Debés seleccionar o registrar un autor.")
+                    st.stop()
+        
+                libro_data = {
+                    "titulo": titulo.strip(),
+                    "autor_id": autor_id,
+                    "editorial": editorial.strip() or None,
+                    "anio": int(anio) if anio else None,
+                    "idioma": idioma if idioma != "-Seleccioná-" else None,
+                    "formato": formato if formato != "-Seleccioná-" else None,
+                    "estado": estado if estado != "-Seleccioná-" else None,
+                    "descripcion": descripcion.strip() or None,
+                    "isbn": isbn.strip() or None,
+                    "ubicacion": ubicacion.strip() or None,
+                    "palabras_clave": [p.strip() for p in palabras_clave.split(",")] if palabras_clave else None,
+                    "fecha_creacion": datetime.now().isoformat(),
+                    "cantidad": int(cantidad),
+                    "precio_costo": float(precio_costo),
+                    "precio_venta": float(precio_venta),
+                }
+        
+                resultado = supabase.table("libros").insert(libro_data).execute()
+        
+                if resultado.data:
+                    st.success("✅ Libro registrado correctamente.")
+                else:
+                    st.error("❌ Error al registrar el libro.")
 
 # --- Página: Registrar autor (manual/independiente) ---
 def registrar_autor():
