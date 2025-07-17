@@ -16,32 +16,27 @@ login_info = login()
 if not login_info or not isinstance(login_info, tuple) or len(login_info) != 6:
     st.stop()
 
-# --- Validar el resultado del login ---
-if st.session_state.get("authentication_status") is False:
+nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
+
+if autenticado is False:
     st.error("❌ Usuario o contraseña incorrectos.")
     st.stop()
-elif st.session_state.get("authentication_status") is None:
+elif autenticado is None:
     st.warning("🔐 Ingresá tus credenciales.")
     st.stop()
-
-# --- Extraer datos si pasó el login ---
-nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
 
 
 if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Función para cerrar sesión correctamente ---
-def cerrar_sesion(authenticator):
-    authenticator.logout("Cerrando sesión...", "main")
-    st.session_state.clear()
-    st.rerun()
+
 
 # --- Sidebar de navegación ---
 st.sidebar.title("📚 Menú de navegación")
 st.sidebar.markdown(f"👤 **{nombre}**")
 st.sidebar.markdown("---")
+authenticator.logout("Cerrar sesión", "sidebar")
 
 seccion = st.sidebar.selectbox("Sección", ["", "Libros", "Clientes", "Ventas"])
 
@@ -54,8 +49,7 @@ elif seccion == "Ventas":
     subvista = st.sidebar.selectbox("Acción", ["Nueva venta", "Historial de ventas"])
 
 st.sidebar.markdown("---")
-if st.sidebar.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
-    cerrar_sesion(authenticator)
+
 
 st.sidebar.markdown("📚 *Gestión Librería v1.0*")
 
