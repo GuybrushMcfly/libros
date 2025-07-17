@@ -63,8 +63,11 @@ def registrar_libro():
 
     if st.session_state.get("modal_autor"):
         mostrar_modal_autor()
+        st.stop()
+    
     if st.session_state.get("modal_editorial"):
         mostrar_modal_editorial()
+        st.stop()
    
 
     # --- Asignación segura de autor_id ---
