@@ -2,6 +2,13 @@ import streamlit as st
 from modules.auth import login
 from views import registrar_libro, ver_stock  # y otros que vayas creando
 
+# --- Función logout definida antes del menú ---
+def logout(authenticator):
+    st.title("🔓 Cerrar sesión")
+    st.success("Sesión finalizada correctamente.")
+    authenticator.logout("Cerrar sesión", "main")
+    st.rerun()
+
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
 
