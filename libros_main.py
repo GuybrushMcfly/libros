@@ -5,45 +5,65 @@ from views import registrar_libro, ver_stock
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
 
+# --- Verificación de sesión activa ---
+def verificar_sesion():
+    if 'authentication_status' not in st.session_state:
+        return False
+    return st.session_state.get('authentication_status') == True
+
 # --- Login de usuario ---
-login_info = login()
+if not verificar_sesion():
+    login_info = login()
+    if not login_info:
+        st.stop()  # Mostrar solo el formulario de login
+    
+    nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
+    
+    if not autenticado:
+        st.stop()
+    
+    if requiere_cambio:
+        st.warning("⚠️ Debe cambiar su contraseña antes de continuar")
+        st.stop()
+    
+    # Guardar estado de autenticación
+    st.session_state.update({
+        'auth_data': login_info,
+        'authentication_status': True,
+        'usuario': usuario,
+        'nombre': nombre
+    })
+    st.rerun()  # Recargar para mostrar la aplicación
 
-# Validar que devolvió datos completos
-if not login_info or not isinstance(login_info, tuple) or len(login_info) != 6:
-    st.stop()
-
-nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
-
-# Controles estrictos post-login
-if not autenticado or "usuario" not in st.session_state:
-    st.stop()  # Ya mostramos los mensajes en el módulo de login
-
-if requiere_cambio:
-    st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
-    st.stop()
-
-# --- Función para cerrar sesión ---
+# --- Cerrar sesión ---
 def cerrar_sesion():
-    authenticator.logout('Cerrar sesión', 'main')
+    if 'auth_data' in st.session_state:
+        _, _, _, authenticator, _, _ = st.session_state['auth_data']
+        authenticator.logout('logout', 'main')
     st.session_state.clear()
     st.rerun()
 
-# --- Solo mostrar la sidebar y navegación si el usuario está autenticado ---
-if autenticado:
+# --- Interfaz principal ---
+if verificar_sesion():
+    # Obtener datos de sesión
+    auth_data = st.session_state.get('auth_data')
+    nombre = st.session_state.get('nombre')
+    
+    # Sidebar
     with st.sidebar:
         st.markdown(f"### 👤 {nombre}")
         st.markdown("---")
         st.markdown("**🕒 Último acceso:**")
-        st.markdown("*Hoy, 10:30 AM*")
+        st.markdown("Ahora mismo")
         st.markdown("---")
-
-        if st.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
+        
+        if st.button("🚪 Cerrar sesión", use_container_width=True, type="primary"):
             cerrar_sesion()
-
+        
         st.markdown("---")
-        st.markdown("*Gestión Librería v1.0*")
+        st.markdown("*Sistema v1.0*")
 
-    # --- Menú de navegación principal ---
+    # Navegación
     pages = {
         "📥 INGRESOS": [
             st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon="📖")
@@ -53,6 +73,4 @@ if autenticado:
         ]
     }
     
-    # Mostrar navegación solo cuando está autenticado
-    pg = st.navigation(pages, position="sidebar")
-    pg.run()
+    st.navigation(pages, position="sidebar").run()
