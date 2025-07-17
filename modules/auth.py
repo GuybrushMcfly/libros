@@ -75,15 +75,21 @@ def login():
         st.error(f"❌ Error en el login: {e}")
         st.stop()
 
+    # --- Evaluar estado ---
     if estado is None:
         st.warning("🔐 Por favor, ingresá tus credenciales.")
         return None
+
     if estado is False:
         st.error("❌ Usuario o contraseña incorrectos.")
         return None
 
-    cambiar_password = False
     if estado is True:
+        if usuario not in credentials["usernames"]:
+            st.error("❌ Usuario inválido.")
+            authenticator.logout("Reintentar", "main")
+            st.stop()
+
         st.session_state["usuario"] = usuario
         st.session_state["nombre_completo"] = nombre
 
@@ -96,4 +102,4 @@ def login():
             "ultimo_acceso": ahora.isoformat()
         }).eq("usuario", usuario).execute()
 
-    return nombre, estado, usuario, authenticator, supabase, cambiar_password
+        return nombre, estado, usuario, authenticator, supabase, cambiar_password
