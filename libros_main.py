@@ -27,7 +27,6 @@ def cerrar_sesion():
     st.rerun()
 
 # --- Sidebar personalizado ---
-st.sidebar.image("logo-cap.png", use_container_width=True)
 st.sidebar.markdown(f"**👤 {nombre}**")
 st.sidebar.markdown("---")
 
