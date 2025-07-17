@@ -77,14 +77,13 @@ def login():
             }
         )
 
-if not login_result or len(login_result) != 3:
-    st.error("⚠️ Error inesperado en autenticación.")
-    return None
+    # --- Validar resultado del login ---
+    if not login_result or len(login_result) != 3:
+        st.error("⚠️ Error inesperado en autenticación.")
+        return None
 
-nombre, estado, usuario = login_result
+    nombre, estado, usuario = login_result
 
-
-    # --- Evaluar estado ---
     if estado is None:
         st.warning("🔐 Por favor, ingresá tus credenciales.")
         return None
