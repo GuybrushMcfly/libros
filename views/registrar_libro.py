@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import numpy as np
+import time
 
 from modules.supabase_conn import supabase
 from modules.dialogos import mostrar_modal_autor, mostrar_modal_editorial
@@ -167,10 +168,28 @@ def registrar_libro():
                         "detalle": "Alta inicial desde formulario"
                     }).execute()
 
-                    st.success("✅ Libro y autores registrados.")
-                    st.session_state["coautores"] = []  # limpiar coautores
+                    st.success("✅ Libro y autor/es registrado/s.")
+                    time.sleep(2)
+                    
+                    # --- LIMPIEZA de formulario tras inserción exitosa ---
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("libro_") or key in [
+                            "titulo", "editorial", "anio", "idioma", "formato", "estado",
+                            "descripcion", "isbn", "ubicacion", "palabras_clave",
+                            "precio_costo", "precio_venta", "cantidad", "tipo_ingreso",
+                            "autor_selector", "cat", "subcat", "editorial_selector"
+                        ] or key.startswith("coautor_"):
+                            del st.session_state[key]
+                    
+                    st.session_state["autor_selector"] = "- Seleccionar autor -"
+                    st.session_state["cat"] = "-Seleccioná-"
+                    st.session_state["subcat"] = "-Seleccioná-"
+                    st.session_state["editorial_selector"] = "- Seleccionar editorial -"
+                    st.session_state["coautores"] = []
                     st.rerun()
 
+
+                
                 except Exception as e:
                     st.error("❌ Error al registrar.")
                     st.exception(e)
