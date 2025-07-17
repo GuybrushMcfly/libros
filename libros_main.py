@@ -23,62 +23,64 @@ elif requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
-# --- Sidebar con navegación ---
+# --- Función para cerrar sesión ---
+def cerrar_sesion():
+    st.session_state.clear()
+    st.success("🔓 Sesión cerrada exitosamente")
+    st.rerun()
+
+# --- Función placeholder para páginas futuras ---
+def pagina_placeholder():
+    st.info("🚧 Esta función estará disponible próximamente")
+    st.markdown("---")
+    st.markdown("**Características planeadas:**")
+    st.markdown("- Funcionalidad completa")
+    st.markdown("- Interfaz intuitiva")
+    st.markdown("- Integración con base de datos")
+
+# --- Sidebar con información del usuario ---
 with st.sidebar:
     # Header del sidebar con usuario
     st.markdown(f"### 👤 {nombre}")
     st.markdown("---")
     
-    # Menú de navegación con selectbox
-    st.markdown("### 📋 Navegación")
-    
-    page_options = {
-        "📥 Registrar libro": "registrar_libro",
-        "📦 Ver stock": "ver_stock"
-    }
-    
-    # Selectbox para navegación
-    selected_page = st.selectbox(
-        "Seleccionar página:",
-        options=list(page_options.keys()),
-        index=0
-    )
-    
-    # Obtener la página seleccionada
-    current_page = page_options[selected_page]
+    # Información adicional
+    st.markdown("**🕒 Último acceso:**")
+    st.markdown("*Hoy, 10:30 AM*")
     
     st.markdown("---")
     
-    # Métricas o información útil
-    st.markdown("### 📊 Resumen")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("📚 Libros", "---")
-    with col2:
-        st.metric("💰 Stock", "---")
-    
-    st.markdown("---")
-    
-    # Botón de logout
-    st.markdown("### 🔓 Sesión")
+    # Botón de logout en sidebar
     if st.button("🚪 Cerrar sesión", use_container_width=True, type="secondary"):
-        st.session_state.clear()
-        st.success("🔓 Sesión cerrada exitosamente")
-        st.rerun()
+        cerrar_sesion()
     
-    # Información adicional en el pie del sidebar
     st.markdown("---")
     st.markdown("*Gestión Librería v1.0*")
 
-# --- Contenido principal ---
-st.title("📚 Gestión Librería")
+# --- Menú de navegación principal en sidebar ---
+pages = {
+    "📥 GESTIÓN DE INGRESOS": [
+        st.Page(registrar_libro.registrar_libro, title="Registrar libro", icon=":material/library_add:"),
+        st.Page(pagina_placeholder, title="Importar catálogo", icon=":material/upload:"),
+        st.Page(pagina_placeholder, title="Editar libros", icon=":material/edit:"),
+    ],
+    "📦 CONTROL DE STOCK": [
+        st.Page(ver_stock.ver_stock, title="Ver stock", icon=":material/inventory_2:"),
+        st.Page(pagina_placeholder, title="Stock bajo", icon=":material/warning:"),
+        st.Page(pagina_placeholder, title="Movimientos", icon=":material/sync_alt:"),
+    ],
+    "📊 REPORTES": [
+        st.Page(pagina_placeholder, title="Ventas", icon=":material/trending_up:"),
+        st.Page(pagina_placeholder, title="Inventario", icon=":material/storage:"),
+        st.Page(pagina_placeholder, title="Ganancias", icon=":material/monetization_on:"),
+    ],
+    "⚙️ CONFIGURACIÓN": [
+        st.Page(pagina_placeholder, title="Usuarios", icon=":material/people:"),
+        st.Page(pagina_placeholder, title="Categorías", icon=":material/category:"),
+        st.Page(pagina_placeholder, title="Backup", icon=":material/backup:"),
+    ]
+}
 
-# Mostrar breadcrumb
-st.markdown(f"📍 **{selected_page}**")
-st.markdown("---")
-
-# Ejecutar la función correspondiente según la página seleccionada
-if current_page == 'registrar_libro':
-    registrar_libro.registrar_libro()
-elif current_page == 'ver_stock':
-    ver_stock.ver_stock()
+# --- Ejecutar navegación en sidebar ---
+pg = st.navigation(pages, position="sidebar")
+pg.run()
