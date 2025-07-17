@@ -55,18 +55,9 @@ def login():
             "password": password,
             "email": f"{usuario}@ejemplo.com"
         }
-
-    # Separar en dos variables
-    user_credentials = {
-        "usuario1": {
-            "name": "usuario1",
-            "password": "...",
-            "email": "usuario1@ejemplo.com"
-        }
-    }
     
     authenticator = stauth.Authenticate(
-        credentials={"usernames": user_credentials},  # 👈 estructura correcta
+        credentials=credentials,
         cookie_name="libreria_sesion",
         key="clave_segura_app_libreria",
         cookie_expiry_days=0.007
