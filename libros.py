@@ -107,13 +107,13 @@ def registrar_libro():
         # --- Formulario de libro ---
         with st.form("registro_libro"):
             titulo = st.text_input("Título del libro")
-
+        
             col1, col2 = st.columns(2)
             with col1:
                 editorial = st.text_input("Editorial")
             with col2:
                 anio = st.number_input("Año de publicación", min_value=1000, max_value=2100, step=1)
-
+        
             col3, col4, col5 = st.columns(3)
             with col3:
                 idioma = st.selectbox("Idioma", ["-Seleccioná-", "ESPAÑOL", "INGLÉS", "FRANCÉS", "ITALIANO", "OTRO"])
@@ -121,19 +121,27 @@ def registrar_libro():
                 formato = st.selectbox("Formato", ["-Seleccioná-", "TAPA DURA", "TAPA BLANDA", "BOLSILLO", "REVISTA"])
             with col5:
                 estado = st.selectbox("Estado", ["-Seleccioná-", "NUEVO", "USADO", "REPLICA", "ANTIGUO"])
-
+        
             descripcion = st.text_area("Descripción")
-
+        
             st.markdown(f"**Categoría seleccionada:** {categoria_nombre if categoria_id else 'No seleccionada'}")
             st.markdown(f"**Subcategoría seleccionada:** {subcat_nombre if subcategoria_id else 'No seleccionada'}")
-
+        
             isbn = st.text_input("ISBN")
             palabras_clave = st.text_input("Palabras clave (separadas por coma)")
             ubicacion = st.text_input("Ubicación en estantería")
-            precio_costo = st.number_input("Precio de compra", min_value=0.0, step=0.01)
-            precio_venta = st.number_input("Precio de venta sugerido", min_value=0.0, step=0.01)
-            cantidad = st.number_input("Cantidad en stock", min_value=1, step=1)
-
+        
+            # --- Fila con precios, cantidad y tipo de ingreso ---
+            col_precio_costo, col_precio_venta, col_cantidad, col_tipo_ingreso = st.columns(4)
+            with col_precio_costo:
+                precio_costo = st.number_input("💰 Precio de compra", min_value=0.0, step=0.01)
+            with col_precio_venta:
+                precio_venta = st.number_input("🏷️ Precio de venta sugerido", min_value=0.0, step=0.01)
+            with col_cantidad:
+                cantidad = st.number_input("📦 Cantidad en stock", min_value=1, step=1)
+            with col_tipo_ingreso:
+                tipo_ingreso = st.selectbox("🗂️ Tipo de ingreso", ["-Seleccioná-", "STOCK HEREDADO", "INGRESO NUEVO"])
+        
             if st.form_submit_button("Registrar libro"):
                 if not titulo.strip():
                     st.error("⚠️ El título del libro es obligatorio.")
@@ -141,7 +149,10 @@ def registrar_libro():
                 if autor_id is None:
                     st.error("⚠️ Debés seleccionar o registrar un autor.")
                     st.stop()
-
+                if tipo_ingreso == "-Seleccioná-":
+                    st.warning("⚠️ Debés seleccionar un tipo de ingreso.")
+                    st.stop()
+        
                 libro_data = {
                     "titulo": titulo.strip().upper(),
                     "autor_id": autor_id,
@@ -157,8 +168,8 @@ def registrar_libro():
                     "fecha_creacion": datetime.now().isoformat(),
                     "subcategoria_id": subcategoria_id
                 }
-
-                # Limpieza final
+        
+                # --- Limpieza de valores nulos o inválidos ---
                 libro_data = {
                     k: None if (
                         v is None or
@@ -169,82 +180,57 @@ def registrar_libro():
                     ) else v
                     for k, v in libro_data.items()
                 }
+        
+                try:
+                    # Insertar libro
+                    resultado = supabase.table("libros").insert(libro_data).execute()
+                    if not resultado.data:
+                        st.error("❌ No se insertó el libro.")
+                        st.stop()
+        
+                    libro_id = resultado.data[0]["id"]
+        
+                    # Insertar stock
+                    supabase.table("stock").insert({
+                        "libro_id": libro_id,
+                        "cantidad_actual": int(cantidad),
+                        "precio_costo": float(precio_costo),
+                        "precio_venta_actual": float(precio_venta),
+                        "fecha_ultima_actualizacion": datetime.now().isoformat()
+                    }).execute()
+        
+                    # Insertar movimiento
+                    supabase.table("movimientos_stock").insert({
+                        "libro_id": libro_id,
+                        "tipo": tipo_ingreso,
+                        "cantidad": int(cantidad),
+                        "precio_unitario": float(precio_costo),
+                        "fecha": datetime.now().isoformat(),
+                        "detalle": "Alta inicial desde formulario"
+                    }).execute()
+        
+                    st.success("✅ Libro y stock registrados correctamente.")
+        
+                    # --- LIMPIEZA de formulario tras inserción exitosa ---
+                    for key in list(st.session_state.keys()):
+                        if key.startswith("libro_") or key in [
+                            "titulo", "editorial", "anio", "idioma", "formato", "estado",
+                            "descripcion", "isbn", "ubicacion", "palabras_clave",
+                            "precio_costo", "precio_venta", "cantidad", "tipo_ingreso",
+                            "autor_selector", "cat", "subcat"
+                        ]:
+                            del st.session_state[key]
+        
+                    st.session_state["autor_selector"] = "-Seleccioná-"
+                    st.session_state["cat"] = "-Seleccioná-"
+                    st.session_state["subcat"] = "-Seleccioná-"
+        
+                    st.rerun()
+        
+                except Exception as e:
+                    st.error("❌ Error al registrar el libro.")
+                    st.exception(e)
 
-                # Guardar en estado temporal
-                st.session_state["libro_data"] = libro_data
-                st.session_state["stock_inicial"] = {
-                    "cantidad": int(cantidad),
-                    "precio_costo": float(precio_costo),
-                    "precio_venta": float(precio_venta)
-                }
-                st.session_state["abrir_dialogo_tipo_stock"] = True
-                st.rerun()
-
-# --- Diálogo: elegir tipo de stock ---
-@st.dialog("📦 Tipo de ingreso de stock")
-def confirmar_tipo_stock():
-    st.markdown("¿Cómo registrarás el stock inicial?")
-    tipo = st.radio("Seleccioná una opción", ["STOCK HEREDADO", "INGRESO NUEVO"], key="tipo_stock")
-
-    if st.button("Registrar libro"):
-        try:
-            libro_data = st.session_state["libro_data"]
-            stock_info = st.session_state["stock_inicial"]
-            tipo_movimiento = st.session_state["tipo_stock"]
-
-            resultado = supabase.table("libros").insert(libro_data).execute()
-            if not resultado.data:
-                st.error("❌ No se insertó el libro.")
-                return
-
-            libro_id = resultado.data[0]["id"]
-
-            supabase.table("stock").insert({
-                "libro_id": libro_id,
-                "cantidad_actual": stock_info["cantidad"],
-                "precio_costo": stock_info["precio_costo"],
-                "precio_venta_actual": stock_info["precio_venta"],
-                "fecha_ultima_actualizacion": datetime.now().isoformat()
-            }).execute()
-
-            supabase.table("movimientos_stock").insert({
-                "libro_id": libro_id,
-                "tipo": tipo_movimiento,
-                "cantidad": stock_info["cantidad"],
-                "precio_unitario": stock_info["precio_costo"],
-                "fecha": datetime.now().isoformat(),
-                "detalle": "Alta inicial desde formulario"
-            }).execute()
-
-            st.success("✅ Libro y stock registrados correctamente.")
-            st.session_state["abrir_dialogo_tipo_stock"] = False
-
-            # --- LIMPIEZA de formulario tras inserción exitosa ---
-            for key in list(st.session_state.keys()):
-                if key.startswith("libro_") or key in [
-                    "titulo", "editorial", "anio", "idioma", "formato", "estado",
-                    "descripcion", "isbn", "ubicacion", "palabras_clave",
-                    "precio_costo", "precio_venta", "cantidad",
-                    "autor_selector", "cat", "subcat"
-                ]:
-                    del st.session_state[key]
-            
-            # Reiniciar selectboxes manualmente si tienen claves fijas
-            st.session_state["autor_selector"] = "-Seleccioná-"
-            st.session_state["cat"] = "-Seleccioná-"
-            st.session_state["subcat"] = "-Seleccioná-"
-            
-            st.rerun()
-      
-
-        except Exception as e:
-            st.error("❌ Error al registrar.")
-            st.exception(e)
-
-
-# --- Mostrar el diálogo solo si fue activado ---
-if st.session_state.get("abrir_dialogo_tipo_stock", False):
-    confirmar_tipo_stock()
 
 
 # --- Página: Registrar autor (manual/independiente) ---
