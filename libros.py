@@ -68,12 +68,7 @@ def registrar_libro():
     subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
 
-    mostrar_formulario = all([
-        categoria_id is not None,
-        subcategoria_id is not None,
-        autor_id is not None
-    ])
-    
+
 
     # --- Selección categoría/subcategoría ---
     col_cat, col_subcat = st.columns(2)
