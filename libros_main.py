@@ -6,7 +6,13 @@ from views import registrar_libro, ver_stock  # y otros que vayas creando
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
 
 # --- Login de usuario ---
-nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login()
+login_info = login()
+
+if not login_info:
+    st.stop()
+
+nombre, autenticado, usuario, authenticator, supabase, requiere_cambio = login_info
+
 
 if not autenticado:
     st.stop()
