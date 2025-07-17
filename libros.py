@@ -64,11 +64,11 @@ def registrar_libro():
     subcategorias_db = supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     df_subcategorias = pd.DataFrame(subcategorias_db)
 
-    # 🔹 Selección de categoría y subcategoría (en cascada, dentro de la función)
+    # 🔹 Selección dinámica de categoría y subcategoría (fuera del form)
     col_cat, col_subcat = st.columns(2)
     with col_cat:
         opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
-        categoria_nombre = st.selectbox("Categoría", opciones_categorias, key="categoria_select_outside")
+        categoria_nombre = st.selectbox("Categoría", opciones_categorias, key="cat")
         categoria_id = None
         if categoria_nombre != "-Seleccioná-":
             categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0]
@@ -80,14 +80,13 @@ def registrar_libro():
         else:
             subcats = pd.DataFrame()
             opciones_sub = ["-Seleccioná-"]
-        subcat_nombre = st.selectbox("Subcategoría", opciones_sub, key="subcategoria_select_outside")
+        subcat_nombre = st.selectbox("Subcategoría", opciones_sub, key="subcat")
         subcategoria_id = None
         if not subcats.empty and subcat_nombre != "-Seleccioná-":
             subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
 
-
+    # Selección de autor
     autor_id = None
-
     col1, col2 = st.columns([4, 1])
     with col1:
         opciones = ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist()
@@ -125,28 +124,12 @@ def registrar_libro():
 
             descripcion = st.text_area("Descripción")
 
-            # Fila: Categoría, Subcategoría e ISBN
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                opciones_categorias = ["-Seleccioná-"] + df_categorias["nombre"].tolist()
-                categoria_nombre = st.selectbox("Categoría", opciones_categorias)
-                categoria_id = None
-                if categoria_nombre != "-Seleccioná-":
-                    categoria_id = df_categorias[df_categorias["nombre"] == categoria_nombre]["id"].values[0]
-            with col2:
-                if categoria_id:
-                    subcats = df_subcategorias[df_subcategorias["categoria_id"] == categoria_id]
-                    opciones_sub = ["-Seleccioná-"] + subcats["nombre"].tolist()
-                else:
-                    opciones_sub = ["-Seleccioná-"]
-                    subcats = pd.DataFrame()
-                subcat_nombre = st.selectbox("Subcategoría", opciones_sub)
-                subcategoria_id = None
-                if not subcats.empty and subcat_nombre != "-Seleccioná-":
-                    subcategoria_id = subcats[subcats["nombre"] == subcat_nombre]["id"].values[0]
-            with col3:
-                isbn = st.text_input("ISBN")
+            # Mostrar selección actual de categoría y subcategoría
+            st.markdown(f"**Categoría seleccionada:** {categoria_nombre if categoria_id else 'No seleccionada'}")
+            st.markdown(f"**Subcategoría seleccionada:** {subcat_nombre if subcategoria_id else 'No seleccionada'}")
 
+            # Otros campos
+            isbn = st.text_input("ISBN")
             palabras_clave = st.text_input("Palabras clave (separadas por coma)")
             ubicacion = st.text_input("Ubicación en estantería")
             precio_costo = st.number_input("Precio de compra", min_value=0.0, step=0.01)
