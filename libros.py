@@ -7,6 +7,21 @@ import os
 from datetime import datetime
 import numpy as np
 
+import streamlit.components.v1 as components
+
+components.html(
+    """
+    <script>
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') e.preventDefault();
+      });
+    });
+    </script>
+    """,
+    height=0,
+)
+
 # --- Conexión Supabase ---
 @st.cache_resource
 def init_connection():
