@@ -74,7 +74,7 @@ def login():
 
     # --- Login ---
     try:
-        nombre, estado, usuario = authenticator.login("Iniciar sesión")
+        nombre, estado, usuario = authenticator.login
     except Exception as e:
         st.error(f"❌ Error en el login: {e}")
         st.stop()
