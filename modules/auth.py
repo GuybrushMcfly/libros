@@ -5,15 +5,18 @@ import datetime, bcrypt, re, os
 
 TIEMPO_MAX_SESION_MIN = 10  # Tiempo máximo de sesión en minutos
 
+# --- Conexión Supabase ---
 @st.cache_resource
 def init_connection():
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SERVICE_KEY")
     return create_client(url, key)
 
+# --- Validación de contraseña nueva ---
 def contraseña_valida(pwd: str) -> bool:
     return len(pwd) >= 6 and re.search(r"\d", pwd)
 
+# --- Cargar usuarios desde tabla 'acceso' ---
 def cargar_usuarios():
     supabase = init_connection()
     resultado = supabase.table("acceso")\
@@ -33,37 +36,36 @@ def cargar_usuarios():
         }
     return usuarios
 
+# --- Función de login principal ---
 def login():
     ahora = datetime.datetime.now()
 
-    # Verifica si la sesión expiró
+    # Cierre de sesión por inactividad
     if "last_activity" in st.session_state:
-        if (ahora - st.session_state["last_activity"]).total_seconds() > TIEMPO_MAX_SESION_MIN * 60:
+        minutos_inactivos = (ahora - st.session_state["last_activity"]).total_seconds() / 60
+        if minutos_inactivos > TIEMPO_MAX_SESION_MIN:
             st.session_state.clear()
             st.warning("🔐 Sesión cerrada por inactividad.")
             st.stop()
 
     st.session_state["last_activity"] = ahora
 
-    # Cargar usuarios activos
+    # Cargar usuarios válidos
     usuarios_validos = cargar_usuarios()
     if not usuarios_validos:
         st.error("❌ No se encontraron usuarios válidos.")
         st.stop()
 
-    credentials = {
-        "usernames": usuarios_validos
-    }
-
-    # Instanciar autenticador
+    # Configuración para streamlit-authenticator
+    credentials = {"usernames": usuarios_validos}
     authenticator = stauth.Authenticate(
         credentials,
-        "app_libreria",            # cookie_name
-        "clave_super_secreta",     # clave de seguridad para cookies
-        0.02                       # duración de la cookie (en días)
+        "app_libreria",             # cookie_name
+        "clave_super_secreta",      # signature key
+        0.02                        # duración de cookie en días (~30 min)
     )
 
-
+    # --- Formulario de login ---
     with st.container():
         nombre, estado, usuario = authenticator.login(
             location="main",
@@ -74,33 +76,33 @@ def login():
                 "Login": "Ingresar"
             }
         )
-    
-    # Evitar loop infinito por estado inválido
-    if estado is None and st.session_state.get("authentication_status") is None:
+
+    # --- Evaluar estado ---
+    if estado is None:
         st.warning("🔐 Por favor, ingresá tus credenciales.")
         return None
-    
+
     if estado is False:
         st.error("❌ Usuario o contraseña incorrectos.")
         return None
-    
+
+    # --- Usuario autenticado correctamente ---
     if estado is True:
-        # Guardar datos en sesión
         st.session_state["usuario"] = usuario
         st.session_state["nombre_completo"] = nombre
-    
+
         supabase = init_connection()
-    
-        # Consultar si debe cambiar contraseña
+
+        # Verificar si debe cambiar la contraseña
         datos = supabase.table("acceso")\
             .select("cambiar_password")\
             .eq("usuario", usuario).maybe_single().execute().data
-    
+
         cambiar_password = datos["cambiar_password"] if datos else False
-    
+
         # Registrar último acceso
         supabase.table("acceso").update({
             "ultimo_acceso": ahora.isoformat()
         }).eq("usuario", usuario).execute()
-    
+
         return nombre, True, usuario, authenticator, supabase, cambiar_password
