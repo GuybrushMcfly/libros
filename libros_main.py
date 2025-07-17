@@ -4,10 +4,14 @@ from views import registrar_libro, ver_stock  # y otros que vayas creando
 
 # --- Función logout definida antes del menú ---
 def logout(authenticator):
-    st.title("🔓 Cerrar sesión")
-    st.success("Sesión finalizada correctamente.")
+    if st.session_state.get("cerrando_sesion"):
+        st.session_state.clear()
+        st.rerun()
+
+    st.session_state["cerrando_sesion"] = True
+    st.success("🔓 Cerrando sesión...")
     authenticator.logout("Cerrar sesión", "main")
-    st.rerun()
+    st.button("Continuar", on_click=st.rerun)
 
 # --- Configuración inicial ---
 st.set_page_config(layout="wide", page_title="Gestión Librería", page_icon="📚")
