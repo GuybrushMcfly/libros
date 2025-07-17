@@ -52,8 +52,6 @@ def login():
         "usernames": usuarios_validos
     }
 
-    st.write("🔍 DEBUG - credentials:", credentials)
-
 
     authenticator = stauth.Authenticate(
         credentials=credentials,
