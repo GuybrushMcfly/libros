@@ -52,40 +52,36 @@ def login():
         "usernames": usuarios_validos
     }
 
- 
-
     authenticator = stauth.Authenticate(
         credentials,
-        "app_libreria",               # cookie_name
-        "clave_super_secreta",        # cookie_key
-        0.02                          # cookie_expiry_days
-    )    
+        "app_libreria",              # cookie_name
+        "clave_super_secreta",       # cookie_key
+        0.02                         # cookie_expiry_days
+    )
 
-    login_result = authenticator.login()
-    
-    if login_result is None:
-        st.stop()
-    
-    nombre, estado, usuario = login_result
+    nombre, estado, usuario = authenticator.login()
 
+    if estado is False:
+        st.error("❌ Usuario o contraseña incorrectos.")
+        return None
+    elif estado is None:
+        st.warning("🔐 Por favor, ingresá tus credenciales.")
+        return None
 
-    if estado:
-        st.session_state["usuario"] = usuario
-        st.session_state["nombre_completo"] = usuario
-        supabase = init_connection()
+    st.session_state["usuario"] = usuario
+    st.session_state["nombre_completo"] = usuario
+    supabase = init_connection()
 
-        # Obtener si debe cambiar contraseña
-        datos = supabase.table("acceso")\
-            .select("cambiar_password")\
-            .eq("usuario", usuario).maybe_single().execute().data
+    # Obtener si debe cambiar contraseña
+    datos = supabase.table("acceso")\
+        .select("cambiar_password")\
+        .eq("usuario", usuario).maybe_single().execute().data
 
-        cambiar_password = datos["cambiar_password"] if datos else False
+    cambiar_password = datos["cambiar_password"] if datos else False
 
-        # Registrar último acceso
-        supabase.table("acceso").update({
-            "ultimo_acceso": ahora.isoformat()
-        }).eq("usuario", usuario).execute()
+    # Registrar último acceso
+    supabase.table("acceso").update({
+        "ultimo_acceso": ahora.isoformat()
+    }).eq("usuario", usuario).execute()
 
-        return nombre, True, usuario, authenticator, supabase, cambiar_password
-
-    return None, estado, usuario, authenticator, None, False
+    return nombre, True, usuario, authenticator, supabase, cambiar_password
