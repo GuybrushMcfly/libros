@@ -65,17 +65,20 @@ def login():
         cookie_key=credentials["cookie"]["key"],
         cookie_expiry_days=credentials["cookie"]["expiry_days"]
     )
-    # --- Login centrado y compacto ---
-    col1, col2, col3 = st.columns([4, 4, 4])  # Más angosto aún
+
+    col1, col2, col3 = st.columns([4, 4, 4])
     with col2:
-        st.markdown("<br>", unsafe_allow_html=True)  # Espacio arriba opcional
+        st.markdown("<br>", unsafe_allow_html=True)
         try:
-            nombre, estado, usuario = authenticator.login()
+            authenticator.login(location='main', key='login')
         except Exception as e:
             st.error(f"❌ Error en el login: {e}")
             st.stop()
 
-        # --- Evaluar estado ---
+        nombre = st.session_state.get("name")
+        estado = st.session_state.get("authentication_status")
+        usuario = st.session_state.get("username")
+
         if estado is None:
             st.warning("🔐 Por favor, ingresá tus credenciales.")
             return None
@@ -103,4 +106,3 @@ def login():
             }).eq("usuario", usuario).execute()
 
             return nombre, estado, usuario, authenticator, supabase, cambiar_password
-
