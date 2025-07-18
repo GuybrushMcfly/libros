@@ -63,9 +63,16 @@ def login():
         credentials=credentials,
         cookie_name=credentials["cookie"]["name"],
         cookie_key=credentials["cookie"]["key"],
-        cookie_expiry_days=credentials["cookie"]["expiry_days"]
+        cookie_expiry_days=credentials["cookie"]["expiry_days"],
+        # 👇 Diccionario de traducciones
+        translations={
+            "login": "Iniciar sesión",
+            "username": "Usuario",
+            "password": "Contraseña",
+            "login_button": "Ingresar",
+            "logout": "Cerrar sesión"
+        }
     )
-
     # --- Login centrado y compacto ---
     col1, col2, col3 = st.columns([4, 4, 4])  # Más angosto aún
     with col2:
