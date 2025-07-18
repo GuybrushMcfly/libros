@@ -1,5 +1,5 @@
 streamlit==1.47.0
-streamlit-authenticator==0.3.2
+streamlit-authenticator>=0.4.2
 streamlit-aggrid
 pandas
 requests
