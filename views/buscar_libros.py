@@ -78,7 +78,6 @@ def buscar_libros():
                 
                 if selected_rows is not None and len(selected_rows) > 0:
                     seleccion = selected_rows[0]
-
                     libro_id = seleccion["ID"]
 
                     # Buscar el libro correspondiente por ID
@@ -91,19 +90,26 @@ def buscar_libros():
                         if editorial_row:
                             editorial_nombre = editorial_row[0]["nombre"]
 
-                    st.markdown("---")
-                    st.subheader("Detalles del libro seleccionado")
-                    st.markdown(f"**Título:** {fila_libro['titulo']}")
-                    st.markdown(f"**Autor(es):** {fila_libro['nombre_formal']}")
-                    st.markdown(f"**Cantidad en stock:** {fila_libro['cantidad_actual']}")
-                    st.markdown(f"**Precio de venta:** {fila_libro['precio_venta_actual']}")
-                    st.markdown(f"**Editorial:** {editorial_nombre}")
-                    st.markdown(f"**Ubicación:** {fila_libro['ubicacion'] or '-'}")
-                    st.markdown(f"**Formato:** {fila_libro['formato'] or '-'}")
-                    st.markdown(f"**Estado:** {fila_libro['estado'] or '-'}")
-                    st.markdown(f"**Año:** {fila_libro['anio'] or '-'}")
-                    st.markdown(f"**ISBN:** {fila_libro['isbn'] or '-'}")
-                    st.markdown(f"**Idioma:** {fila_libro['idioma'] or '-'}")
+                    # --- Card visual para detalles del libro seleccionado ---
+                    st.markdown(
+                        f"""
+                        <div style="border-radius: 18px; border: 1px solid #e0e0e0; background-color: #f7f7fc; padding: 1.5em 1em; box-shadow: 0 2px 8px rgba(180,180,220,0.08); margin-bottom: 1em;">
+                            <h2 style="margin-top: 0; font-size: 1.4em;">📚 <b>{fila_libro['titulo']}</b></h2>
+                            <p style="margin-bottom: 8px; font-size: 1.1em;">👤 <b>Autor(es):</b> {fila_libro['nombre_formal']}</p>
+                            <p style="margin-bottom: 8px;">🏷️ <b>Editorial:</b> {editorial_nombre}</p>
+                            <p style="margin-bottom: 8px;">💲 <b>Precio de venta:</b> ${fila_libro['precio_venta_actual']}</p>
+                            <p style="margin-bottom: 12px;">📦 <b>Stock:</b> {fila_libro['cantidad_actual']}</p>
+                            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 1em 0;">
+                            <p style="margin-bottom: 6px;">🏠 <b>Ubicación:</b> {fila_libro['ubicacion'] or '-'}</p>
+                            <p style="margin-bottom: 6px;">📘 <b>Formato:</b> {fila_libro['formato'] or '-'}</p>
+                            <p style="margin-bottom: 6px;">⭐ <b>Estado:</b> {fila_libro['estado'] or '-'}</p>
+                            <p style="margin-bottom: 6px;">🗓️ <b>Año:</b> {fila_libro['anio'] or '-'}</p>
+                            <p style="margin-bottom: 6px;">🔢 <b>ISBN:</b> {fila_libro['isbn'] or '-'}</p>
+                            <p style="margin-bottom: 0;">🌐 <b>Idioma:</b> {fila_libro['idioma'] or '-'}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
                 else:
                     st.info("Seleccioná un libro de la tabla para ver detalles.")
             else:
