@@ -78,7 +78,6 @@ def buscar_libros():
                 
                 if selected_rows is not None and len(selected_rows) > 0:
                     seleccion = selected_rows[0]
-                    st.write("DEBUG seleccion:", seleccion)
 
                     libro_id = seleccion["ID"]
 
