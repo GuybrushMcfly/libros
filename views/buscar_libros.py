@@ -3,7 +3,7 @@ from modules.supabase_conn import supabase
 import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
-@st.cache_data(ttl=3600)
+#@st.cache_data(ttl=3600)
 def cargar_autores():
     autores_data = supabase.table("autores").select("id, nombre_formal").order("nombre_formal").execute().data
     return pd.DataFrame(autores_data)
