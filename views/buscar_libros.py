@@ -71,10 +71,14 @@ def buscar_libros():
                 )
 
                 selected_rows = grid_response["selected_rows"]
+                
+                # Si es un DataFrame, convertí a lista de dicts
+                if isinstance(selected_rows, pd.DataFrame):
+                    selected_rows = selected_rows.to_dict(orient="records")
+                
                 if selected_rows is not None and len(selected_rows) > 0:
-                    
                     seleccion = selected_rows[0]
-                    st.write("DEBUG seleccion:", seleccion)   # <-- Acá el debug
+                    st.write("DEBUG seleccion:", seleccion)
 
                     libro_id = seleccion["ID"]
 
