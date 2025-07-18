@@ -1,8 +1,8 @@
 import streamlit as st
 from modules.supabase_conn import supabase
 import pandas as pd
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
 
-# --- Cargar y cachear lista de autores ---
 @st.cache_data(ttl=3600)
 def cargar_autores():
     autores_data = supabase.table("autores").select("id, nombre_formal").order("nombre_formal").execute().data
@@ -11,7 +11,6 @@ def cargar_autores():
 def buscar_libros():
     st.title("🔎 Buscar libros")
 
-    # --- Selector de tipo de búsqueda ---
     tipo_busqueda = st.radio(
         "Buscar por:", 
         options=["Autor", "Título (próximamente)", "Editorial (próximamente)"], 
@@ -19,47 +18,86 @@ def buscar_libros():
     )
 
     if tipo_busqueda == "Autor":
-        # --- Dropdown de autores cacheado ---
         df_autores = cargar_autores()
         lista_autores = ["- Seleccioná autor -"] + df_autores["nombre_formal"].tolist()
         autor_seleccionado = st.selectbox("Autor", lista_autores)
 
-        # --- Buscar libros solo si se selecciona autor válido ---
         if autor_seleccionado != "- Seleccioná autor -":
-            # Buscar el id del autor seleccionado
             autor_id = df_autores[df_autores["nombre_formal"] == autor_seleccionado]["id"].iloc[0]
-            
-            # 1. Obtener los libros de ese autor desde la tabla libros_autores
             libros_autores = supabase.table("libros_autores").select("libro_id").eq("autor_id", autor_id).execute().data
             libro_ids = [la["libro_id"] for la in libros_autores]
 
             if libro_ids:
-                # 2. Traer datos de libros por esos ids
-                libros_data = supabase.table("libros").select("id, titulo").in_("id", libro_ids).execute().data
+                # 1. Traer info de libros
+                libros_data = supabase.table("libros").select(
+                    "id, titulo, editorial_id, ubicacion, formato, estado, anio, isbn, idioma"
+                ).in_("id", libro_ids).execute().data
                 df_libros = pd.DataFrame(libros_data)
 
-                # 3. Traer stock y precio para esos libros
+                # 2. Stock y precio
                 stock_data = supabase.table("stock").select("libro_id, cantidad_actual, precio_venta_actual").in_("libro_id", libro_ids).execute().data
                 df_stock = pd.DataFrame(stock_data)
 
-                # 4. Traer coautores para esos libros
+                # 3. Coautores (trae todos)
                 coautores_data = supabase.table("libros_autores").select("libro_id, autor_id").in_("libro_id", libro_ids).execute().data
                 df_coautores = pd.DataFrame(coautores_data)
                 df_coautores = df_coautores.merge(df_autores, left_on="autor_id", right_on="id", how="left")
 
-                # Construir la columna de autores para cada libro
                 autores_por_libro = df_coautores.groupby("libro_id")["nombre_formal"].apply(lambda nombres: " / ".join(nombres)).reset_index()
-                
-                # Armar la tabla final para mostrar
-                df_final = df_libros.merge(autores_por_libro, left_on="id", right_on="libro_id", how="left")
-                df_final = df_final.merge(df_stock, left_on="id", right_on="libro_id", how="left")
 
-                # Solo mostrar las columnas requeridas
-                df_final = df_final[["nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]]
-                df_final.columns = ["Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
+                # Merge tabla base
+                df_base = df_libros.merge(autores_por_libro, left_on="id", right_on="libro_id", how="left")
+                df_base = df_base.merge(df_stock, left_on="id", right_on="libro_id", how="left")
+
+                # Tabla para AgGrid
+                df_aggrid = df_base[["nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
+                df_aggrid.columns = ["Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
 
                 st.write("### Resultados")
-                st.dataframe(df_final, use_container_width=True)
+                gb = GridOptionsBuilder.from_dataframe(df_aggrid)
+                gb.configure_selection(selection_mode="single", use_checkbox=True)
+                grid_options = gb.build()
+
+                grid_response = AgGrid(
+                    df_aggrid,
+                    gridOptions=grid_options,
+                    update_mode=GridUpdateMode.SELECTION_CHANGED,
+                    enable_enterprise_modules=False,
+                    allow_unsafe_jscode=True,
+                    theme="material",
+                    height=300
+                )
+
+                # Si hay selección, mostrar detalles ampliados abajo
+                selected_rows = grid_response["selected_rows"]
+                if selected_rows:
+                    seleccion = selected_rows[0]
+                    # Buscar el libro correspondiente
+                    titulo_seleccionado = seleccion["Título"]
+                    fila_libro = df_base[df_base["titulo"] == titulo_seleccionado].iloc[0]
+
+                    # Buscar editorial (nombre)
+                    editorial_nombre = "-"
+                    if pd.notnull(fila_libro.get("editorial_id", None)):
+                        editorial_row = supabase.table("editoriales").select("nombre").eq("id", fila_libro["editorial_id"]).execute().data
+                        if editorial_row:
+                            editorial_nombre = editorial_row[0]["nombre"]
+
+                    st.markdown("---")
+                    st.subheader("Detalles del libro seleccionado")
+                    st.markdown(f"**Título:** {fila_libro['titulo']}")
+                    st.markdown(f"**Autor(es):** {fila_libro['nombre_formal']}")
+                    st.markdown(f"**Cantidad en stock:** {fila_libro['cantidad_actual']}")
+                    st.markdown(f"**Precio de venta:** {fila_libro['precio_venta_actual']}")
+                    st.markdown(f"**Editorial:** {editorial_nombre}")
+                    st.markdown(f"**Ubicación:** {fila_libro['ubicacion'] or '-'}")
+                    st.markdown(f"**Formato:** {fila_libro['formato'] or '-'}")
+                    st.markdown(f"**Estado:** {fila_libro['estado'] or '-'}")
+                    st.markdown(f"**Año:** {fila_libro['anio'] or '-'}")
+                    st.markdown(f"**ISBN:** {fila_libro['isbn'] or '-'}")
+                    st.markdown(f"**Idioma:** {fila_libro['idioma'] or '-'}")
+                else:
+                    st.info("Seleccioná un libro de la tabla para ver detalles.")
             else:
                 st.info("No se encontraron libros para el autor seleccionado.")
         else:
@@ -67,7 +105,6 @@ def buscar_libros():
     else:
         st.info("Funcionalidad disponible próximamente.")
 
-# --- Si esto es un archivo views/buscar_libros.py, solo dejá esta función pública ---
+# --- Si esto es un archivo views/buscar_libros.py ---
 if __name__ == "__main__":
     buscar_libros()
-
