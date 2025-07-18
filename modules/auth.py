@@ -42,10 +42,7 @@ def login():
         st.error("❌ No se encontraron usuarios activos.")
         st.stop()
 
-    credentials = {
-        "usernames": {}
-    }
-    
+    credentials = {"usernames": {}}
     for u in usuarios:
         usuario = u.get("usuario", "").strip().lower()
         password = u.get("password", "")
@@ -56,14 +53,12 @@ def login():
             "password": password,
             "email": f"{usuario}@ejemplo.com"
         }
-    
-    # ✅ MISMO PATRÓN QUE LA APP FUNCIONAL
     credentials["cookie"] = {
         "expiry_days": 0.007,
         "key": "clave_segura_app_libreria",
         "name": "libreria_sesion"
     }
-    
+
     authenticator = stauth.Authenticate(
         credentials=credentials,
         cookie_name=credentials["cookie"]["name"],
@@ -71,40 +66,42 @@ def login():
         cookie_expiry_days=credentials["cookie"]["expiry_days"]
     )
 
-col1, col2, col3 = st.columns([2.5, 1, 2.5])
-with col2:
-    # --- Login ---
-    try:
-        nombre, estado, usuario = authenticator.login()
-    except Exception as e:
-        st.error(f"❌ Error en el login: {e}")
-        st.stop()
-
-    # --- Evaluar estado ---
-    if estado is None:
-        st.warning("🔐 Por favor, ingresá tus credenciales.")
-        return None
-
-    if estado is False:
-        st.error("❌ Usuario o contraseña incorrectos.")
-        return None
-
-    if estado is True:
-        if usuario not in credentials["usernames"]:
-            st.error("❌ Usuario inválido.")
-            authenticator.logout("Reintentar", "main")
+    # --- Login centrado y compacto ---
+    col1, col2, col3 = st.columns([4, 0.8, 4])  # Más angosto aún
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)  # Espacio arriba opcional
+        try:
+            nombre, estado, usuario = authenticator.login()
+        except Exception as e:
+            st.error(f"❌ Error en el login: {e}")
             st.stop()
 
-        st.session_state["usuario"] = usuario
-        st.session_state["nombre_completo"] = nombre
+        # --- Evaluar estado ---
+        if estado is None:
+            st.warning("🔐 Por favor, ingresá tus credenciales.")
+            return None
 
-        datos = supabase.table("acceso")\
-            .select("cambiar_password")\
-            .eq("usuario", usuario).maybe_single().execute().data
-        cambiar_password = datos["cambiar_password"] if datos else False
+        if estado is False:
+            st.error("❌ Usuario o contraseña incorrectos.")
+            return None
 
-        supabase.table("acceso").update({
-            "ultimo_acceso": ahora.isoformat()
-        }).eq("usuario", usuario).execute()
+        if estado is True:
+            if usuario not in credentials["usernames"]:
+                st.error("❌ Usuario inválido.")
+                authenticator.logout("Reintentar", "main")
+                st.stop()
 
-        return nombre, estado, usuario, authenticator, supabase, cambiar_password
+            st.session_state["usuario"] = usuario
+            st.session_state["nombre_completo"] = nombre
+
+            datos = supabase.table("acceso")\
+                .select("cambiar_password")\
+                .eq("usuario", usuario).maybe_single().execute().data
+            cambiar_password = datos["cambiar_password"] if datos else False
+
+            supabase.table("acceso").update({
+                "ultimo_acceso": ahora.isoformat()
+            }).eq("usuario", usuario).execute()
+
+            return nombre, estado, usuario, authenticator, supabase, cambiar_password
+
