@@ -55,7 +55,7 @@ def buscar_libros():
 
                 st.write("### Resultados")
                 gb = GridOptionsBuilder.from_dataframe(df_aggrid)
-                gb.configure_selection(selection_mode="single", use_checkbox=True)
+                gb.configure_selection(selection_mode="single", use_checkbox=False)
                 gb.configure_column("ID", hide=True)  # Oculta la columna ID en la grilla
                 grid_options = gb.build()
 
