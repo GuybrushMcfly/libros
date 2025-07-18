@@ -57,7 +57,7 @@ def registrar_libro():
     col_autor, col_editorial = st.columns(2)
     with col_autor:
         seleccion_autor = st.selectbox("Autor", ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist(), key="autor_selector")
-        if st.button("➕ Agregar autor, type = "primary""):
+        if st.button("➕ Agregar autor", type = "primary"):
             st.session_state["modal_autor"] = True
 
     with col_editorial:
