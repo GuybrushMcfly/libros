@@ -67,7 +67,7 @@ def login():
     )
 
     # --- Login centrado y compacto ---
-    col1, col2, col3 = st.columns([4, 1, 4])  # Más angosto aún
+    col1, col2, col3 = st.columns([4, 4, 4])  # Más angosto aún
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)  # Espacio arriba opcional
         try:
