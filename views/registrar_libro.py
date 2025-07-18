@@ -57,12 +57,12 @@ def registrar_libro():
     col_autor, col_editorial = st.columns(2)
     with col_autor:
         seleccion_autor = st.selectbox("Autor", ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist(), key="autor_selector")
-        if st.button("➕ Agregar autor"):
+        if st.button("➕ Agregar autor, type = "primary""):
             st.session_state["modal_autor"] = True
 
     with col_editorial:
         seleccion_editorial = st.selectbox("Editorial", ["- Seleccionar editorial -"] + df_editoriales["nombre"].tolist(), key="editorial_selector")
-        if st.button("➕ Agregar editorial"):
+        if st.button("➕ Agregar editorial", type = "primary"):
             st.session_state["modal_editorial"] = True
 
     # --- Modales con limpieza de caché al agregar (importante) ---
@@ -100,7 +100,7 @@ def registrar_libro():
         st.session_state["coautores"][i] = coautor
 
     if len(st.session_state["coautores"]) < 2:
-        if st.button("➕ Registrar coautor"):
+        if st.button("➕ Registrar coautor", type = "primary"):
             st.session_state["coautores"].append("- Seleccionar -")
             st.rerun()
 
@@ -131,7 +131,7 @@ def registrar_libro():
             # --- CAMPO ACTIVO: Observaciones como último ---
             observaciones = st.text_area("Observaciones")
 
-            if st.form_submit_button("Registrar libro"):
+            if st.form_submit_button("Registrar libro", type = "primary"):
                 faltantes = []
             
                 if not titulo.strip():
