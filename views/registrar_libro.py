@@ -5,7 +5,7 @@ import numpy as np
 import time
 
 from modules.supabase_conn import supabase
-from modules.dialogos import mostrar_modal_autor, mostrar_modal_editorial
+from modules.modal import mostrar_modal_autor, mostrar_modal_editorial
 from modules.procesadores import limpiar_valores_nulos
 
 def registrar_libro():
