@@ -65,9 +65,17 @@ def buscar_libros():
 
                 
                 st.write("#### Resultados")
+                gb.configure_column("ID", hide=True)  # Oculta la columna ID en la grilla
                 gb = GridOptionsBuilder.from_dataframe(df_aggrid)
                 gb.configure_selection(selection_mode="single", use_checkbox=False)
                 gb.configure_column("ID", hide=True)  # Oculta la columna ID en la grilla
+                
+                # --- SETEA EL ANCHO DE CADA COLUMNA ---
+                gb.configure_column("Título", width=350)
+                gb.configure_column("Editorial", width=180)
+                gb.configure_column("Cantidad en stock", width=140)
+
+                
                 grid_options = gb.build()
 
                 grid_response = AgGrid(
