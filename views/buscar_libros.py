@@ -72,7 +72,10 @@ def buscar_libros():
 
                 selected_rows = grid_response["selected_rows"]
                 if selected_rows is not None and len(selected_rows) > 0:
+                    
                     seleccion = selected_rows[0]
+                    st.write("DEBUG seleccion:", seleccion)   # <-- Acá el debug
+
                     libro_id = seleccion["ID"]
 
                     # Buscar el libro correspondiente por ID
