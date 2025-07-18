@@ -44,7 +44,7 @@ st.sidebar.markdown(
     f"**Libros:** {libros_count}  \n"
     f"**Editoriales:** {editoriales_count}"
 )
-st.sidebar.markdown("---")
+#st.sidebar.markdown("---")
 
 # --- Estructura del menú principal y submenú ---
 menu = {
