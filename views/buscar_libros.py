@@ -34,30 +34,31 @@ def buscar_libros():
                     "id, titulo, editorial_id, ubicacion, formato, estado, anio, isbn, idioma"
                 ).in_("id", libro_ids).execute().data
                 df_libros = pd.DataFrame(libros_data)
-
+                
                 # 2. Stock y precio
                 stock_data = supabase.table("stock").select("libro_id, cantidad_actual, precio_venta_actual").in_("libro_id", libro_ids).execute().data
                 df_stock = pd.DataFrame(stock_data)
-
+                
                 # 3. Coautores (trae todos)
                 coautores_data = supabase.table("libros_autores").select("libro_id, autor_id").in_("libro_id", libro_ids).execute().data
                 df_coautores = pd.DataFrame(coautores_data)
                 df_coautores = df_coautores.merge(df_autores, left_on="autor_id", right_on="id", how="left")
-
+                
                 autores_por_libro = df_coautores.groupby("libro_id")["nombre_formal"].apply(lambda nombres: " / ".join(nombres)).reset_index()
-
+                
+                # --- PRIMERO armá df_base ---
+                df_base = df_libros.merge(autores_por_libro, left_on="id", right_on="libro_id", how="left")
+                df_base = df_base.merge(df_stock, left_on="id", right_on="libro_id", how="left")
+                
                 # 4. Editoriales (nombre)
                 editoriales_data = supabase.table("editoriales").select("id, nombre").execute().data
                 df_editoriales = pd.DataFrame(editoriales_data)
                 
-                # Merge para agregar columna "editorial"
+                # --- Luego mergeás con df_base ---
                 df_base = df_base.merge(df_editoriales, left_on="editorial_id", right_on="id", how="left", suffixes=("", "_editorial"))
                 df_base.rename(columns={"nombre": "editorial"}, inplace=True)
-
-                # Tabla para AgGrid, agregando id como columna oculta
-                #df_aggrid = df_base[["id", "nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
-                #df_aggrid.columns = ["ID", "Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
-
+                
+                # Ahora sí podés crear df_aggrid
                 df_aggrid = df_base[["id", "titulo", "editorial", "cantidad_actual"]].copy()
                 df_aggrid.columns = ["ID", "Título", "Editorial", "Cantidad en stock"]
 
