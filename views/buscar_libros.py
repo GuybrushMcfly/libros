@@ -64,7 +64,8 @@ def buscar_libros():
                     update_mode=GridUpdateMode.SELECTION_CHANGED,
                     enable_enterprise_modules=False,
                     allow_unsafe_jscode=True,
-                    theme="material",
+                    theme="streamlit",      # ← Estilo neutro, sin fondo blanco
+                    fit_columns_on_grid_load=True,
                     height=300
                 )
 
