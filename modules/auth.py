@@ -71,7 +71,8 @@ def login():
         cookie_expiry_days=credentials["cookie"]["expiry_days"]
     )
 
-
+col1, col2, col3 = st.columns([2.5, 1, 2.5])
+with col2:
     # --- Login ---
     try:
         nombre, estado, usuario = authenticator.login()
