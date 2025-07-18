@@ -56,6 +56,9 @@ def buscar_libros():
                 # --- Luego mergeás con df_base ---
                 df_base = df_base.merge(df_editoriales, left_on="editorial_id", right_on="id", how="left", suffixes=("", "_editorial"))
                 df_base.rename(columns={"nombre": "editorial"}, inplace=True)
+
+                df_base["nombre_formal"] = df_base["nombre_formal"].fillna("-")
+
                 
                 # Ahora sí podés crear df_aggrid
                 df_aggrid = df_base[["id", "titulo", "editorial", "cantidad_actual"]].copy()
