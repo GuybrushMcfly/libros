@@ -91,21 +91,35 @@ def buscar_libros():
                             editorial_nombre = editorial_row[0]["nombre"]
 
                     # --- Card visual para detalles del libro seleccionado ---
+                    def mostrar_valor(valor):
+                        if valor is None or str(valor).strip() == "" or pd.isna(valor):
+                            return "-"
+                        return valor
+                    
+                    precio = mostrar_valor(fila_libro.get('precio_venta_actual'))
+                    stock = mostrar_valor(fila_libro.get('cantidad_actual'))
+                    ubicacion = mostrar_valor(fila_libro.get('ubicacion'))
+                    formato = mostrar_valor(fila_libro.get('formato'))
+                    estado = mostrar_valor(fila_libro.get('estado'))
+                    anio = mostrar_valor(fila_libro.get('anio'))
+                    isbn = mostrar_valor(fila_libro.get('isbn'))
+                    idioma = mostrar_valor(fila_libro.get('idioma'))
+                    
                     st.markdown(
                         f"""
-                        <div style="border-radius: 18px; border: 1px solid #e0e0e0; background-color: #f7f7fc; padding: 1.5em 1em; box-shadow: 0 2px 8px rgba(180,180,220,0.08); margin-bottom: 1em;">
-                            <h2 style="margin-top: 0; font-size: 1.4em;">📚 <b>{fila_libro['titulo']}</b></h2>
-                            <p style="margin-bottom: 8px; font-size: 1.1em;">👤 <b>Autor(es):</b> {fila_libro['nombre_formal']}</p>
-                            <p style="margin-bottom: 8px;">🏷️ <b>Editorial:</b> {editorial_nombre}</p>
-                            <p style="margin-bottom: 8px;">💲 <b>Precio de venta:</b> ${fila_libro['precio_venta_actual']}</p>
-                            <p style="margin-bottom: 12px;">📦 <b>Stock:</b> {fila_libro['cantidad_actual']}</p>
+                        <div style="border-radius: 18px; border: 1px solid #e0e0e0; padding: 1.5em 1em; box-shadow: 0 2px 8px rgba(80,80,120,0.10); margin-bottom: 1em; background:rgba(30,30,30,0.01);">
+                            <h2 style="margin-top: 0; font-size: 1.4em;">📚 <b>{mostrar_valor(fila_libro['titulo'])}</b></h2>
+                            <p style="margin-bottom: 8px; font-size: 1.1em;">👤 <b>Autor(es):</b> {mostrar_valor(fila_libro['nombre_formal'])}</p>
+                            <p style="margin-bottom: 8px;">🏷️ <b>Editorial:</b> {mostrar_valor(editorial_nombre)}</p>
+                            <p style="margin-bottom: 8px;">💲 <b>Precio de venta:</b> ${precio}</p>
+                            <p style="margin-bottom: 12px;">📦 <b>Stock:</b> {stock}</p>
                             <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 1em 0;">
-                            <p style="margin-bottom: 6px;">🏠 <b>Ubicación:</b> {fila_libro['ubicacion'] or '-'}</p>
-                            <p style="margin-bottom: 6px;">📘 <b>Formato:</b> {fila_libro['formato'] or '-'}</p>
-                            <p style="margin-bottom: 6px;">⭐ <b>Estado:</b> {fila_libro['estado'] or '-'}</p>
-                            <p style="margin-bottom: 6px;">🗓️ <b>Año:</b> {fila_libro['anio'] or '-'}</p>
-                            <p style="margin-bottom: 6px;">🔢 <b>ISBN:</b> {fila_libro['isbn'] or '-'}</p>
-                            <p style="margin-bottom: 0;">🌐 <b>Idioma:</b> {fila_libro['idioma'] or '-'}</p>
+                            <p style="margin-bottom: 6px;">🏠 <b>Ubicación:</b> {ubicacion}</p>
+                            <p style="margin-bottom: 6px;">📘 <b>Formato:</b> {formato}</p>
+                            <p style="margin-bottom: 6px;">⭐ <b>Estado:</b> {estado}</p>
+                            <p style="margin-bottom: 6px;">🗓️ <b>Año:</b> {anio}</p>
+                            <p style="margin-bottom: 6px;">🔢 <b>ISBN:</b> {isbn}</p>
+                            <p style="margin-bottom: 0;">🌐 <b>Idioma:</b> {idioma}</p>
                         </div>
                         """,
                         unsafe_allow_html=True
