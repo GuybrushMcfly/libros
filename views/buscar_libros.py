@@ -70,7 +70,7 @@ def buscar_libros():
 
                 # Si hay selección, mostrar detalles ampliados abajo
                 selected_rows = grid_response["selected_rows"]
-                if selected_rows:
+                if selected_rows is not None and len(selected_rows) > 0:
                     seleccion = selected_rows[0]
                     # Buscar el libro correspondiente
                     titulo_seleccionado = seleccion["Título"]
