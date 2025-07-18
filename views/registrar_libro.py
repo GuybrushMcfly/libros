@@ -123,10 +123,10 @@ def registrar_libro():
             # palabras_clave = st.text_input("Palabras clave (coma)")
 
             col_a, col_b, col_c, col_d = st.columns(4)
-            precio_costo = col_c.number_input("💰 Precio de compra", min_value=0.0, step=0.01)
-            precio_venta = col_d.number_input("🏷️ Precio de venta", min_value=0.0, step=0.01)
-            cantidad = col_b.number_input("📦 Cantidad en stock", min_value=1, step=1)
             tipo_ingreso = col_a.selectbox("Tipo ingreso", ["- Seleccioná -", "Stock Heredado", "Stock Nuevo"])
+            cantidad = col_b.number_input("📦 Cantidad en stock", min_value=1, max_value=100, step=1)
+            precio_costo = col_c.number_input("💰 Precio unitario compra", min_value=0.0, max_value=300000.0, step=0.01, format="%.2f")
+            precio_venta = col_d.number_input("🏷️ Precio unitario venta", min_value=0.0, max_value=300000.0, step=0.01, format="%.2f")
 
             # --- CAMPO ACTIVO: Observaciones como último ---
             observaciones = st.text_area("Observaciones")
@@ -155,6 +155,7 @@ def registrar_libro():
             
                 if faltantes:
                     mensaje = "⚠️ Debés completar los siguientes campos obligatorios:\n\n- " + "\n- ".join(faltantes)
+                    mensaje += "\n\n💡 *Ingresá los precios usando solo punto (.) para decimales. Ejemplo válido: 72500.50*"
                     st.warning(mensaje)
                     st.stop()
             
