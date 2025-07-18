@@ -46,9 +46,13 @@ def buscar_libros():
 
                 autores_por_libro = df_coautores.groupby("libro_id")["nombre_formal"].apply(lambda nombres: " / ".join(nombres)).reset_index()
 
-                # Merge tabla base
-                df_base = df_libros.merge(autores_por_libro, left_on="id", right_on="libro_id", how="left")
-                df_base = df_base.merge(df_stock, left_on="id", right_on="libro_id", how="left")
+                # 4. Editoriales (nombre)
+                editoriales_data = supabase.table("editoriales").select("id, nombre").execute().data
+                df_editoriales = pd.DataFrame(editoriales_data)
+                
+                # Merge para agregar columna "editorial"
+                df_base = df_base.merge(df_editoriales, left_on="editorial_id", right_on="id", how="left", suffixes=("", "_editorial"))
+                df_base.rename(columns={"nombre": "editorial"}, inplace=True)
 
                 # Tabla para AgGrid, agregando id como columna oculta
                 #df_aggrid = df_base[["id", "nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
