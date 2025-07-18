@@ -45,7 +45,6 @@ st.sidebar.markdown(
     f"**Editoriales:** {editoriales_count}"
 )
 st.sidebar.markdown("---")
-authenticator.logout("Cerrar sesión", "sidebar")
 
 # --- Estructura del menú principal y submenú ---
 menu = {
@@ -80,6 +79,8 @@ if seccion and seccion in menu and len(menu[seccion]) > 0:
     subvista = st.sidebar.selectbox("Acción", menu[seccion])
 
 st.sidebar.markdown("---")
+authenticator.logout("Cerrar sesión", "sidebar")
+
 st.sidebar.markdown("📚 *Gestión Librería v1.0*")
 
 # --- Renderizar la vista según la selección ---
