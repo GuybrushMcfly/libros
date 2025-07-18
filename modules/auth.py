@@ -64,7 +64,12 @@ def login():
         credentials=credentials,
         cookie_name=credentials["cookie"]["name"],
         cookie_key=credentials["cookie"]["key"],
-        cookie_expiry_days=credentials["cookie"]["expiry_days"]
+        cookie_expiry_days=credentials["cookie"]["expiry_days"],
+        translations={
+            "login": "Acceso al Sistema de la Librería",
+            "username": "Usuario",
+            "password": "Contraseña",
+        }
     )
 
     # --- Login centrado y compacto ---
