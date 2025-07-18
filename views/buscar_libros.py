@@ -49,13 +49,14 @@ def buscar_libros():
                 df_base = df_libros.merge(autores_por_libro, left_on="id", right_on="libro_id", how="left")
                 df_base = df_base.merge(df_stock, left_on="id", right_on="libro_id", how="left")
 
-                # Tabla para AgGrid
-                df_aggrid = df_base[["nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
-                df_aggrid.columns = ["Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
+                # Tabla para AgGrid, agregando id como columna oculta
+                df_aggrid = df_base[["id", "nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
+                df_aggrid.columns = ["ID", "Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
 
                 st.write("### Resultados")
                 gb = GridOptionsBuilder.from_dataframe(df_aggrid)
                 gb.configure_selection(selection_mode="single", use_checkbox=True)
+                gb.configure_column("ID", hide=True)  # Oculta la columna ID en la grilla
                 grid_options = gb.build()
 
                 grid_response = AgGrid(
@@ -64,18 +65,18 @@ def buscar_libros():
                     update_mode=GridUpdateMode.SELECTION_CHANGED,
                     enable_enterprise_modules=False,
                     allow_unsafe_jscode=True,
-                    theme="streamlit",      # ← Estilo neutro, sin fondo blanco
+                    theme="streamlit",
                     fit_columns_on_grid_load=True,
                     height=300
                 )
 
-                # Si hay selección, mostrar detalles ampliados abajo
                 selected_rows = grid_response["selected_rows"]
                 if selected_rows is not None and len(selected_rows) > 0:
                     seleccion = selected_rows[0]
-                    # Buscar el libro correspondiente
-                    titulo_seleccionado = seleccion["Título"]
-                    fila_libro = df_base[df_base["titulo"] == titulo_seleccionado].iloc[0]
+                    libro_id = seleccion["ID"]
+
+                    # Buscar el libro correspondiente por ID
+                    fila_libro = df_base[df_base["id"] == libro_id].iloc[0]
 
                     # Buscar editorial (nombre)
                     editorial_nombre = "-"
