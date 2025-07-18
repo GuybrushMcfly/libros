@@ -19,7 +19,8 @@ def cargar_editoriales():
     return pd.DataFrame(data) if data else pd.DataFrame(columns=["id", "nombre"])
 
 def registrar_libro():
-    st.title("📘 Registrar nuevo libro")
+    st.title("##📘 Registrar nuevo libro")
+    
 
     # --- Cargar datos desde Supabase ---
     df_autores = cargar_autores()
