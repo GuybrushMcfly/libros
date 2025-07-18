@@ -8,6 +8,9 @@ from modules.supabase_conn import supabase
 from modules.dialogos import mostrar_modal_autor, mostrar_modal_editorial
 from modules.procesadores import limpiar_valores_nulos
 
+from fragments.fragment_autor import fragment_autor
+from fragments.fragment_editorial import fragment_editorial
+
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
 
@@ -34,7 +37,6 @@ def registrar_libro():
             fila = df_categorias[df_categorias["nombre"] == categoria_nombre]
             if not fila.empty:
                 categoria_id = fila.iloc[0]["id"]
-    
     with col_subcat:
         opciones_sub = ["- Seleccioná subcategoría -"]
         subcategoria_id = None
@@ -47,28 +49,20 @@ def registrar_libro():
             if not fila_sub.empty:
                 subcategoria_id = fila_sub.iloc[0]["id"]
 
-
-
-    # --- Autor principal y coautores ---
+    # --- Fragmentos: Autor principal y coautores / Editorial ---
     col_autor, col_editorial = st.columns(2)
     with col_autor:
-        seleccion_autor = st.selectbox("Autor", ["- Seleccionar autor -"] + df_autores["nombre_formal"].tolist(), key="autor_selector")
-        if st.button("➕ Agregar autor"):
-            st.session_state["modal_autor"] = True
-
+        seleccion_autor, coautores = fragment_autor(df_autores)
     with col_editorial:
-        seleccion_editorial = st.selectbox("Editorial", ["- Seleccionar editorial -"] + df_editoriales["nombre"].tolist(), key="editorial_selector")
-        if st.button("➕ Agregar editorial"):
-            st.session_state["modal_editorial"] = True
+        seleccion_editorial = fragment_editorial(df_editoriales)
 
+    # --- Modales para alta rápida ---
     if st.session_state.get("modal_autor"):
         mostrar_modal_autor()
         st.stop()
-    
     if st.session_state.get("modal_editorial"):
         mostrar_modal_editorial()
         st.stop()
-   
 
     # --- Asignación segura de autor_id ---
     autor_id = None
@@ -83,20 +77,6 @@ def registrar_libro():
         fila_editorial = df_editoriales[df_editoriales["nombre"] == seleccion_editorial]
         if not fila_editorial.empty:
             editorial_id = fila_editorial.iloc[0]["id"]
-
-    # --- Coautores ---
-    if "coautores" not in st.session_state:
-        st.session_state["coautores"] = []
-
-    st.markdown("#### Coautores")
-    for i, seleccion in enumerate(st.session_state["coautores"]):
-        coautor = st.selectbox(f"Coautor #{i+1}", ["- Seleccionar -"] + df_autores["nombre_formal"].tolist(), key=f"coautor_{i}")
-        st.session_state["coautores"][i] = coautor
-
-    if len(st.session_state["coautores"]) < 2:
-        if st.button("➕ Registrar coautor"):
-            st.session_state["coautores"].append("- Seleccionar -")
-            st.rerun()
 
     # --- Validación mínima para avanzar ---
     if all([categoria_id, subcategoria_id, autor_id, editorial_id]):
@@ -127,7 +107,7 @@ def registrar_libro():
 
             if st.form_submit_button("Registrar libro"):
                 faltantes = []
-            
+                # --- Validaciones activas ---
                 if not titulo.strip():
                     faltantes.append("Título")
                 if categoria_id is None:
@@ -146,15 +126,15 @@ def registrar_libro():
                     faltantes.append("Cantidad en stock")
                 if tipo_ingreso == "- Seleccioná -":
                     faltantes.append("Tipo de ingreso")
-            
+
                 if faltantes:
                     mensaje = "⚠️ Debés completar los siguientes campos obligatorios:\n\n- " + "\n- ".join(faltantes)
                     st.warning(mensaje)
                     st.stop()
-            
+
                 datos_libro = limpiar_valores_nulos({
                     "titulo": titulo.strip().upper(),
-                    # "autor_id": autor_id,
+                    # "autor_id": autor_id,  # ahora se registra en tabla libros_autores
                     "editorial_id": editorial_id,
                     # "anio": int(anio) if anio else None,
                     # "idioma": idioma if idioma != "-Seleccioná-" else None,
@@ -168,23 +148,23 @@ def registrar_libro():
                     "fecha_creacion": datetime.now().isoformat(),
                     "subcategoria_id": subcategoria_id
                 })
-            
+
                 try:
                     libro = supabase.table("libros").insert(datos_libro).execute().data
                     if not libro:
                         st.error("❌ Error al insertar libro.")
                         return
                     libro_id = libro[0]["id"]
-            
+
                     # Insertar relación libro-autor principal
                     supabase.table("libros_autores").insert({
                         "libro_id": libro_id,
                         "autor_id": autor_id,
                         "orden": 1
                     }).execute()
-            
+
                     # Insertar coautores si hay
-                    for idx, nombre in enumerate(st.session_state["coautores"]):
+                    for idx, nombre in enumerate(coautores):
                         if nombre != "- Seleccionar -":
                             fila = df_autores[df_autores["nombre_formal"] == nombre]
                             if not fila.empty:
@@ -193,7 +173,7 @@ def registrar_libro():
                                     "autor_id": fila.iloc[0]["id"],
                                     "orden": idx + 2
                                 }).execute()
-            
+
                     supabase.table("stock").insert({
                         "libro_id": libro_id,
                         "cantidad_actual": int(cantidad),
@@ -201,7 +181,7 @@ def registrar_libro():
                         "precio_venta_actual": float(precio_venta),
                         "fecha_ultima_actualizacion": datetime.now().isoformat()
                     }).execute()
-            
+
                     supabase.table("movimientos_stock").insert({
                         "libro_id": libro_id,
                         "tipo": tipo_ingreso,
@@ -210,10 +190,10 @@ def registrar_libro():
                         "fecha": datetime.now().isoformat(),
                         "detalle": "Alta inicial desde formulario"
                     }).execute()
-            
+
                     st.success("✅ Libro y autor/es registrado/s.")
                     time.sleep(2)
-                    
+
                     # --- LIMPIEZA de formulario tras inserción exitosa ---
                     for key in list(st.session_state.keys()):
                         if key.startswith("libro_") or key in [
@@ -223,14 +203,14 @@ def registrar_libro():
                             "autor_selector", "cat", "subcat", "editorial_selector"
                         ] or key.startswith("coautor_"):
                             del st.session_state[key]
-                    
+
                     st.session_state["autor_selector"] = "- Seleccioná autor -"
                     st.session_state["cat"] = "- Seleccioná categoría -"
                     st.session_state["subcat"] = "- Seleccioná subcategoría -"
                     st.session_state["editorial_selector"] = "- Seleccioná editorial -"
                     st.session_state["coautores"] = []
                     st.rerun()
-            
+
                 except Exception as e:
                     st.error("❌ Error al registrar.")
                     st.exception(e)
