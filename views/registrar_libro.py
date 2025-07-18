@@ -8,22 +8,28 @@ from modules.supabase_conn import supabase
 from modules.modal import mostrar_modal_autor, mostrar_modal_editorial
 from modules.procesadores import limpiar_valores_nulos
 
+# --- CACHÉ de autores y editoriales ---
+@st.cache_data
+def cargar_autores():
+    return pd.DataFrame(supabase.table("autores").select("id, nombre_formal").order("nombre_formal").execute().data)
+
+@st.cache_data
+def cargar_editoriales():
+    data = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
+    return pd.DataFrame(data) if data else pd.DataFrame(columns=["id", "nombre"])
+
 def registrar_libro():
     st.title("📘 Registrar nuevo libro")
 
     # --- Cargar datos desde Supabase ---
-    df_autores = pd.DataFrame(
-        supabase.table("autores").select("id, nombre_formal").order("nombre_formal").execute().data
-    )
+    df_autores = cargar_autores()
     df_categorias = pd.DataFrame(
         supabase.table("categorias").select("id, nombre").order("nombre").execute().data
     )
     df_subcategorias = pd.DataFrame(
         supabase.table("subcategorias").select("id, nombre, categoria_id").order("nombre").execute().data
     )
-    df_editoriales = pd.DataFrame(
-        supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
-    ) if supabase.table("editoriales").select("id").execute().data else pd.DataFrame(columns=["id", "nombre"])
+    df_editoriales = cargar_editoriales()
 
     # --- Categoría/Subcategoría en cascada ---
     col_cat, col_subcat = st.columns(2)
@@ -47,8 +53,6 @@ def registrar_libro():
             if not fila_sub.empty:
                 subcategoria_id = fila_sub.iloc[0]["id"]
 
-
-
     # --- Autor principal y coautores ---
     col_autor, col_editorial = st.columns(2)
     with col_autor:
@@ -61,15 +65,17 @@ def registrar_libro():
         if st.button("➕ Agregar editorial"):
             st.session_state["modal_editorial"] = True
 
+    # --- Modales con limpieza de caché al agregar (importante) ---
     if st.session_state.get("modal_autor"):
         mostrar_modal_autor()
+        cargar_autores.clear()  # Limpia el caché de autores tras agregar uno nuevo
         st.stop()
     
     if st.session_state.get("modal_editorial"):
         mostrar_modal_editorial()
+        cargar_editoriales.clear()  # Limpia el caché de editoriales tras agregar uno nuevo
         st.stop()
    
-
     # --- Asignación segura de autor_id ---
     autor_id = None
     if seleccion_autor != "- Seleccionar autor -":
