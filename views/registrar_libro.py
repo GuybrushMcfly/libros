@@ -96,7 +96,7 @@ def registrar_libro():
     if "coautores" not in st.session_state:
         st.session_state["coautores"] = []
 
-    st.markdown("#### Coautores")
+    st.markdown("##### Coautores")
     for i, seleccion in enumerate(st.session_state["coautores"]):
         coautor = st.selectbox(f"Coautor #{i+1}", ["- Seleccionar -"] + df_autores["nombre_formal"].tolist(), key=f"coautor_{i}")
         st.session_state["coautores"][i] = coautor
