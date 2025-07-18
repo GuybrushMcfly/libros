@@ -9,7 +9,8 @@ def cargar_autores():
     return pd.DataFrame(autores_data)
 
 def buscar_libros():
-    st.title("🔎 Buscar libros")
+    #st.title("🔎 Buscar libros")
+    st.markdown("<h2 style='font-size:24px;'>🔎 Buscar libros</h2>", unsafe_allow_html=True)
 
     tipo_busqueda = st.radio(
         "Buscar por:", 
@@ -50,10 +51,15 @@ def buscar_libros():
                 df_base = df_base.merge(df_stock, left_on="id", right_on="libro_id", how="left")
 
                 # Tabla para AgGrid, agregando id como columna oculta
-                df_aggrid = df_base[["id", "nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
-                df_aggrid.columns = ["ID", "Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
+                #df_aggrid = df_base[["id", "nombre_formal", "titulo", "cantidad_actual", "precio_venta_actual"]].copy()
+                #df_aggrid.columns = ["ID", "Autor(es)", "Título", "Cantidad en stock", "Precio de venta"]
 
-                st.write("### Resultados")
+                df_aggrid = df_base[["id", "titulo", "editorial", "cantidad_actual"]].copy()
+                df_aggrid.columns = ["ID", "Título", "Editorial", "Cantidad en stock"]
+
+
+                
+                st.write("#### Resultados")
                 gb = GridOptionsBuilder.from_dataframe(df_aggrid)
                 gb.configure_selection(selection_mode="single", use_checkbox=False)
                 gb.configure_column("ID", hide=True)  # Oculta la columna ID en la grilla
@@ -102,7 +108,7 @@ def buscar_libros():
                     formato = mostrar_valor(fila_libro.get('formato'))
                     estado = mostrar_valor(fila_libro.get('estado'))
                     anio = mostrar_valor(fila_libro.get('anio'))
-                    isbn = mostrar_valor(fila_libro.get('isbn'))
+                #    isbn = mostrar_valor(fila_libro.get('isbn'))
                     idioma = mostrar_valor(fila_libro.get('idioma'))
                     
                     st.markdown(
@@ -117,8 +123,7 @@ def buscar_libros():
                             <p style="margin-bottom: 6px;">🏠 <b>Ubicación:</b> {ubicacion}</p>
                             <p style="margin-bottom: 6px;">📘 <b>Formato:</b> {formato}</p>
                             <p style="margin-bottom: 6px;">⭐ <b>Estado:</b> {estado}</p>
-                            <p style="margin-bottom: 6px;">🗓️ <b>Año:</b> {anio}</p>
-                            <p style="margin-bottom: 6px;">🔢 <b>ISBN:</b> {isbn}</p>
+                            <p style="margin-bottom: 6px;">🗓️ <b>Año:</b> {anio}</p>                       
                             <p style="margin-bottom: 0;">🌐 <b>Idioma:</b> {idioma}</p>
                         </div>
                         """,
