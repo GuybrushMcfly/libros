@@ -9,11 +9,11 @@ from modules.modal import mostrar_modal_autor, mostrar_modal_editorial
 from modules.procesadores import limpiar_valores_nulos
 
 # --- CACHÉ de autores y editoriales ---
-@st.cache_data
+#@st.cache_data
 def cargar_autores():
     return pd.DataFrame(supabase.table("autores").select("id, nombre_formal").order("nombre_formal").execute().data)
 
-@st.cache_data
+#@st.cache_data
 def cargar_editoriales():
     data = supabase.table("editoriales").select("id, nombre").order("nombre").execute().data
     return pd.DataFrame(data) if data else pd.DataFrame(columns=["id", "nombre"])
