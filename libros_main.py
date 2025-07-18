@@ -1,6 +1,6 @@
 import streamlit as st
 from modules.auth import login
-from views import registrar_libro, ver_stock, buscar_libros  # Importá otras vistas cuando estén listas
+from views import registrar_libro, ver_stock, buscar_libros
 
 # --- Configuración inicial ---
 st.set_page_config(
@@ -27,9 +27,23 @@ if requiere_cambio:
     st.warning("⚠️ Debés cambiar tu contraseña antes de continuar.")
     st.stop()
 
+# --- Conteo rápido ---
+def get_count(tabla):
+    res = supabase.table(tabla).select("id", count="exact").limit(1).execute()
+    return res.count or 0
+
+autores_count = get_count("autores")
+libros_count = get_count("libros")
+editoriales_count = get_count("editoriales")
+
 # --- Sidebar de navegación ---
-st.sidebar.title("📚 Menú de navegación")
-st.sidebar.markdown(f"👤 **{nombre}**")
+st.sidebar.title("📚 Menú")
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    f"**Autores:** {autores_count}  \n"
+    f"**Libros:** {libros_count}  \n"
+    f"**Editoriales:** {editoriales_count}"
+)
 st.sidebar.markdown("---")
 authenticator.logout("Cerrar sesión", "sidebar")
 
