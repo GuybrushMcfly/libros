@@ -38,7 +38,7 @@ editoriales_count = get_count("editoriales")
 
 # --- Sidebar de navegación ---
 st.sidebar.title("📚 Menú")
-st.sidebar.markdown("---")
+#st.sidebar.markdown("---")
 st.sidebar.markdown(
     f"**Autores:** {autores_count}  \n"
     f"**Libros:** {libros_count}  \n"
