@@ -3,7 +3,7 @@ import streamlit_authenticator as stauth
 from supabase import create_client
 import datetime, bcrypt, re, os
 
-TIEMPO_MAX_SESION_MIN = 10  # Logout automático tras 10 minutos
+TIEMPO_MAX_SESION_MIN = 40  # Logout automático tras 40 minutos
 
 @st.cache_resource
 def init_connection():
